@@ -547,7 +547,7 @@ const Announcements = {
 
     /** Reset filter */
     resetFilter() {
-        document.getElementById('annFilterType').value = 'upcoming';
+        document.getElementById('annFilterType').value = 'all';
         FilterUtils.updateInputs('ann');
         this.applyFilter();
     },
