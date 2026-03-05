@@ -1052,6 +1052,11 @@ function showApp() {
             el.style.display = AppState.isAdmin() ? 'inline-block' : 'none';
         });
 
+        // Show Auth Only Elements
+        document.querySelectorAll('.auth-only').forEach(el => {
+            el.style.display = 'block';
+        });
+
     } else {
         // Guest
         document.getElementById('userDisplayName').textContent = 'ผู้เยี่ยมชม';
@@ -1064,6 +1069,11 @@ function showApp() {
 
         // Hide Admin Only Elements
         document.querySelectorAll('.admin-only').forEach(el => {
+            el.style.display = 'none';
+        });
+
+        // Hide Auth Only Elements
+        document.querySelectorAll('.auth-only').forEach(el => {
             el.style.display = 'none';
         });
     }
