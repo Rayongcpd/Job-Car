@@ -141,8 +141,8 @@
     }
 
     .calendar-day {
-        min-height: calc((100vh - 250px) / 6);
-        /* Allow it to scale based on available screen height, leaving room for header */
+        min-height: calc((100vh - 190px) / 6);
+        /* Increased height to fill the remaining screen space */
         padding: 2px;
     }
 
