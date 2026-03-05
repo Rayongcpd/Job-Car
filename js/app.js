@@ -619,8 +619,7 @@ const VehicleLogs = {
         document.getElementById('vehRequestor').value = '';
         document.getElementById('vehDepartureTime').value = '';
         document.getElementById('vehReturnTime').value = '';
-        document.getElementById('vehMileageStart').value = '';
-        document.getElementById('vehMileageEnd').value = '';
+
         document.getElementById('vehDriver').value = '';
         document.getElementById('vehStatus').value = 'Active';
         new bootstrap.Modal(document.getElementById('vehFormModal')).show();
@@ -643,8 +642,7 @@ const VehicleLogs = {
         // Format time for input[type="time"] - handles ISO strings from Google Sheets
         document.getElementById('vehDepartureTime').value = parseTimeForInput(item.DepartureTime);
         document.getElementById('vehReturnTime').value = parseTimeForInput(item.ReturnTime);
-        document.getElementById('vehMileageStart').value = item.MileageStart || '';
-        document.getElementById('vehMileageEnd').value = item.MileageEnd || '';
+
         document.getElementById('vehDriver').value = item.Driver || '';
         document.getElementById('vehStatus').value = item.Status || 'Active';
         new bootstrap.Modal(document.getElementById('vehFormModal')).show();
@@ -660,8 +658,8 @@ const VehicleLogs = {
         const requestor = document.getElementById('vehRequestor').value.trim();
         const departureTime = document.getElementById('vehDepartureTime').value;
         const returnTime = document.getElementById('vehReturnTime').value;
-        const mileageStart = document.getElementById('vehMileageStart').value;
-        const mileageEnd = document.getElementById('vehMileageEnd').value;
+        const mileageStart = '';
+        const mileageEnd = '';
         const driver = document.getElementById('vehDriver').value.trim();
         const status = document.getElementById('vehStatus').value;
 
