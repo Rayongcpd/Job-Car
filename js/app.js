@@ -794,7 +794,8 @@ const Calendar = {
                         destination: item.Destination || '',
                         requestor: item.Requestor || item.requestor || '',
                         departureTime: item.DepartureTime || '',
-                        returnTime: item.ReturnTime || ''
+                        returnTime: item.ReturnTime || '',
+                        postedBy: item.PostedBy || ''
                     });
                 }
             });
@@ -935,7 +936,7 @@ const Calendar = {
                             <p class="mb-1 small text-secondary"><i class="fas fa-layer-group me-1"></i> กลุ่มงาน: ${escapeHtml(ev.workGroup || '-')}</p>
                             <p class="mb-1 small text-secondary"><i class="fas fa-file-alt me-1"></i> รายละเอียด: ${escapeHtml(ev.detail || '-')}</p>
                             <hr style="border-color: var(--border-color); margin: 8px 0;">
-                            <small class="text-muted d-block text-end fst-italic"><i class="fas fa-user me-1"></i> ผู้สร้างโพสนี้: ${escapeHtml(ev.postedBy)}</small>
+                            <small class="text-muted d-block text-end fst-italic" style="font-size:0.7em;"><i class="fas fa-user me-1"></i> ผู้สร้างโพสนี้: ${escapeHtml(ev.postedBy)}</small>
                         </div>
                     `;
                 } else {
@@ -952,6 +953,8 @@ const Calendar = {
                             </div>
                             <p class="mb-1 small text-secondary"><i class="fas fa-map-marker-alt me-1"></i> สถานที่ : ${escapeHtml(ev.destination || '-')}</p>
                             <p class="mb-0 small text-secondary"><i class="fas fa-bullseye me-1"></i> เพื่อ : ${escapeHtml(ev.purpose || '-')}</p>
+                            <hr style="border-color: var(--border-color); margin: 8px 0;">
+                            <small class="text-muted d-block text-end fst-italic" style="font-size:0.7em;"><i class="fas fa-user me-1"></i> ผู้สร้างโพสนี้: ${escapeHtml(ev.postedBy || '-')}</small>
                         </div>
                     `;
                 }
