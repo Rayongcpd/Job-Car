@@ -883,7 +883,7 @@ input:checked+.slider .fa-moon {
     }
 
     .calendar-day {
-        min-height: 60px;
+        min-height: 40px;
         padding: 4px;
     }
 
@@ -899,7 +899,7 @@ input:checked+.slider .fa-moon {
     .calendar-header {
         flex-wrap: wrap;
         gap: 8px;
-        padding: 12px 16px;
+        padding: 8px 16px;
     }
 
     .calendar-header h4 {
