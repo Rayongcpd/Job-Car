@@ -592,7 +592,7 @@ const VehicleLogs = {
         <td data-label="จุดประสงค์">${escapeHtml(item.Purpose || '-')}</td>
         <td data-label="ปลายทาง">${escapeHtml(item.Destination || '')}</td>
         <td data-label="ผู้ขอใช้/กลุ่มงาน">${escapeHtml(item.Requestor || item.requestor || '-')}</td>
-        <td data-label="พนักงานขับ">${escapeHtml(item.Driver || '')}</td>
+        <td data-label="พนักงานขับ">${item.Driver === 'พนักงานขับรถลา' ? '<span style="color:#dc3545;font-weight:bold;">' + escapeHtml(item.Driver) + '</span>' : escapeHtml(item.Driver || '')}</td>
         <td data-label="สถานะ"><span class="badge-status badge-${(item.Status || '').toLowerCase()}">${escapeHtml(item.Status || '')}</span></td>
         <td data-label="จัดการ">
           ${AppState.isAdmin() ? `
@@ -942,7 +942,7 @@ const Calendar = {
                     html += `
                         <div class="list-group-item bg-transparent border-bottom">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0 text-primary">🚗 เลขทะเบียน : ${escapeHtml(ev.label)} <span class="text-muted fw-normal" style="font-size:0.85em;">(พนักงานขับรถ : ${escapeHtml(ev.driver || '-')})</span></h6>
+                                <h6 class="mb-0 text-primary">🚗 เลขทะเบียน : ${escapeHtml(ev.label)} <span class="${ev.driver === 'พนักงานขับรถลา' ? 'fw-bold' : 'fw-normal'}" style="font-size:0.85em;${ev.driver === 'พนักงานขับรถลา' ? 'color:#dc3545;' : 'color:var(--text-muted);'}">(พนักงานขับรถ : ${escapeHtml(ev.driver || '-')})</span></h6>
                                 <span class="badge-status badge-${(ev.status || '').toLowerCase()}">${escapeHtml(ev.status)}</span>
                             </div>
                             <p class="mb-1 small text-secondary"><i class="fas fa-user-tag me-1"></i> ผู้ขอใช้รถ : ${escapeHtml(ev.requestor || '-')}</p>
