@@ -214,6 +214,9 @@ const FilterUtils = {
                         ${this.generateYearOptions(year)}
                     </select>`;
                 break;
+            case 'upcoming':
+                html = `<div class="text-muted small pt-2">แสดงรายการวันนี้และอนาคต</div>`;
+                break;
             default: // all
                 html = `<div class="text-muted small pt-2">แสดงข้อมูลทั้งหมด</div>`;
         }
@@ -253,22 +256,31 @@ const FilterUtils = {
         if (!data) return [];
         if (criteria.type === 'all') return data;
 
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        if (criteria.type === 'upcoming') {
+            // Show today + future, sorted ascending (nearest first)
+            const filtered = data.filter(item => {
+                if (!item.Date) return false;
+                const itemDateStr = Calendar.normalizeDate(item.Date);
+                return itemDateStr && itemDateStr >= todayStr;
+            });
+            filtered.sort((a, b) => new Date(a.Date) - new Date(b.Date));
+            return filtered;
+        }
+
         return data.filter(item => {
             if (!item.Date) return false;
-            // item.Date is likely YYYY-MM-DD string or ISO
-            // Normalize to YYYY-MM-DD
             const itemDateStr = Calendar.normalizeDate(item.Date);
             if (!itemDateStr) return false;
 
-            const [y, m, d] = itemDateStr.split('-').map(Number); // y=2024, m=2, d=15
+            const [y, m, d] = itemDateStr.split('-').map(Number);
 
             switch (criteria.type) {
                 case 'daily':
-                    // criteria.date is YYYY-MM-DD
-                    if (!criteria.date) return true; // No date selected, show all? Or none? Let's show all or handle validation
+                    if (!criteria.date) return true;
                     return itemDateStr === criteria.date;
                 case 'monthly':
-                    // criteria.month is YYYY-MM
                     if (!criteria.month) return true;
                     return itemDateStr.startsWith(criteria.month);
                 case 'quarterly':
@@ -296,7 +308,7 @@ const Announcements = {
 
         if (result.success) {
             AppState.announcements = result.data;
-            this.render(result.data);
+            this.applyFilter();
         } else {
             container.innerHTML = emptyHTML('ไม่สามารถโหลดข้อมูลได้');
         }
@@ -311,6 +323,7 @@ const Announcements = {
             return;
         }
 
+        const today = new Date().toISOString().split('T')[0];
         container.innerHTML = data.map((item, index) => {
             // Format time display
             let timeDisplay = '-';
@@ -318,9 +331,10 @@ const Announcements = {
                 timeDisplay = formatTime(item.Time);
                 if (item.TimeSuffix) timeDisplay += ' ' + escapeHtml(item.TimeSuffix);
             }
+            const isPast = Calendar.normalizeDate(item.Date) < today;
 
             return `
-      <tr class="fade-in" style="animation-delay: ${index * 0.05}s">
+      <tr class="fade-in${isPast ? ' row-past' : ''}" style="animation-delay: ${index * 0.05}s">
         <td data-label="#"><span style="color: var(--text-muted); font-size: 12px;">${index + 1}</span></td>
         <td data-label="วันที่">${formatThaiDate(item.Date)}</td>
         <td data-label="เวลา">${timeDisplay}</td>
@@ -533,9 +547,9 @@ const Announcements = {
 
     /** Reset filter */
     resetFilter() {
-        document.getElementById('annFilterType').value = 'all';
+        document.getElementById('annFilterType').value = 'upcoming';
         FilterUtils.updateInputs('ann');
-        this.render(AppState.announcements);
+        this.applyFilter();
     },
 
     /** Confirm and delete announcement */
@@ -567,7 +581,7 @@ const VehicleLogs = {
 
         if (result.success) {
             AppState.vehicleLogs = result.data;
-            this.render(result.data);
+            this.applyFilter();
         } else {
             container.innerHTML = emptyHTML('ไม่สามารถโหลดข้อมูลได้');
         }
@@ -582,8 +596,11 @@ const VehicleLogs = {
             return;
         }
 
-        container.innerHTML = data.map((item, index) => `
-      <tr class="fade-in" style="animation-delay: ${index * 0.05}s">
+        const today = new Date().toISOString().split('T')[0];
+        container.innerHTML = data.map((item, index) => {
+            const isPast = Calendar.normalizeDate(item.Date) < today;
+            return `
+      <tr class="fade-in${isPast ? ' row-past' : ''}" style="animation-delay: ${index * 0.05}s">
         <td data-label="#"><span style="color: var(--text-muted); font-size: 12px;">${index + 1}</span></td>
         <td data-label="วันที่">${formatThaiDate(item.Date)}</td>
         <td data-label="เวลาไป">${formatTime(item.DepartureTime)}</td>
@@ -605,7 +622,8 @@ const VehicleLogs = {
           ` : ''}
         </td>
       </tr>
-    `).join('');
+    `;
+        }).join('');
     },
 
     /** Show add form modal */
@@ -693,9 +711,9 @@ const VehicleLogs = {
 
     /** Reset filter */
     resetFilter() {
-        document.getElementById('vehFilterType').value = 'all';
+        document.getElementById('vehFilterType').value = 'upcoming';
         FilterUtils.updateInputs('veh');
-        this.render(AppState.vehicleLogs);
+        this.applyFilter();
     },
 
     /** Confirm and delete vehicle log */

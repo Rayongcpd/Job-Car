@@ -1085,3 +1085,13 @@ input:checked+.slider .fa-moon {
     overflow-y: auto;
     color: var(--text-primary);
 }
+
+/* ============ PAST DATE ROWS ============ */
+.row-past {
+    opacity: 0.4;
+    transition: opacity 0.2s ease;
+}
+
+.row-past:hover {
+    opacity: 0.75;
+}
