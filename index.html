@@ -465,6 +465,42 @@
     </div>
   </div>
 
+  <!-- ============ SETTINGS MODAL ============ -->
+  <div class="modal fade" id="settingsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-cogs me-2"></i>ตั้งค่าปฏิทิน (Superadmin)</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body pb-0">
+          <div class="mb-3">
+            <label class="form-label">ความกว้างตารางปฏิทินขั้นต่ำ (px หรือ %)</label>
+            <input type="text" class="form-control" id="settingCalendarWidth" placeholder="ตัวอย่าง: 100%, 800px"
+              value="100%">
+            <div class="form-text">ถ้ากำหนดค่า px เช่น 800px หากหน้าจอเล็กกว่า 800px ตารางจะสามารถเลื่อนซ้ายขวาได้</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">ความสูงขั้นต่ำของช่องวันที่ (px)</label>
+            <input type="number" class="form-control" id="settingCellHeight" placeholder="ตัวอย่าง: 100" value="100"
+              min="50">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">ขนาดตัวอักษรของกิจกรรม (px)</label>
+            <input type="number" class="form-control" id="settingFontSize" placeholder="ตัวอย่าง: 11" value="11" min="8"
+              max="24">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-primary-custom" id="btnSaveSettings" onclick="Settings.save()">
+            <i class="fas fa-save me-2"></i>บันทึกการตั้งค่า
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <!-- App JS -->
