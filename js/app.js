@@ -248,14 +248,17 @@ const Settings = {
             root.style.setProperty('--color-vehicle', this.data.colorVeh);
             console.log("Applied color vehicle:", this.data.colorVeh);
         }
-        if (this.data.colorAnnText) {
-            root.style.setProperty('--color-ann-text', this.data.colorAnnText);
-            console.log("Applied text color announcement:", this.data.colorAnnText);
-        }
-        if (this.data.colorVehText) {
-            root.style.setProperty('--color-veh-text', this.data.colorVehText);
-            console.log("Applied text color vehicle:", this.data.colorVehText);
-        }
+        if (this.data.colorAnnTime) root.style.setProperty('--color-ann-time', this.data.colorAnnTime);
+        if (this.data.colorAnnLocation) root.style.setProperty('--color-ann-location', this.data.colorAnnLocation);
+        if (this.data.colorAnnCoop) root.style.setProperty('--color-ann-coop', this.data.colorAnnCoop);
+        if (this.data.colorAnnGroup) root.style.setProperty('--color-ann-group', this.data.colorAnnGroup);
+        if (this.data.colorAnnDetail) root.style.setProperty('--color-ann-detail', this.data.colorAnnDetail);
+
+        if (this.data.colorVehRequestor) root.style.setProperty('--color-veh-requestor', this.data.colorVehRequestor);
+        if (this.data.colorVehDeparture) root.style.setProperty('--color-veh-departure', this.data.colorVehDeparture);
+        if (this.data.colorVehReturn) root.style.setProperty('--color-veh-return', this.data.colorVehReturn);
+        if (this.data.colorVehDestination) root.style.setProperty('--color-veh-destination', this.data.colorVehDestination);
+        if (this.data.colorVehPurpose) root.style.setProperty('--color-veh-purpose', this.data.colorVehPurpose);
     },
 
     /** Show settings modal and populate current values */
@@ -269,8 +272,17 @@ const Settings = {
         // Set colors, fallback to defaults if not set
         document.getElementById('settingColorAnn').value = this.data.colorAnn || '#6c63ff';
         document.getElementById('settingColorVeh').value = this.data.colorVeh || '#ff6b9d';
-        document.getElementById('settingColorAnnText').value = this.data.colorAnnText || '#596275';
-        document.getElementById('settingColorVehText').value = this.data.colorVehText || '#596275';
+        document.getElementById('settingColorAnnTime').value = this.data.colorAnnTime || '#596275';
+        document.getElementById('settingColorAnnLocation').value = this.data.colorAnnLocation || '#596275';
+        document.getElementById('settingColorAnnCoop').value = this.data.colorAnnCoop || '#596275';
+        document.getElementById('settingColorAnnGroup').value = this.data.colorAnnGroup || '#596275';
+        document.getElementById('settingColorAnnDetail').value = this.data.colorAnnDetail || '#596275';
+
+        document.getElementById('settingColorVehRequestor').value = this.data.colorVehRequestor || '#596275';
+        document.getElementById('settingColorVehDeparture').value = this.data.colorVehDeparture || '#596275';
+        document.getElementById('settingColorVehReturn').value = this.data.colorVehReturn || '#596275';
+        document.getElementById('settingColorVehDestination').value = this.data.colorVehDestination || '#596275';
+        document.getElementById('settingColorVehPurpose').value = this.data.colorVehPurpose || '#596275';
 
         new bootstrap.Modal(document.getElementById('settingsModal')).show();
     },
@@ -284,9 +296,6 @@ const Settings = {
         const calendarFontSize = document.getElementById('settingFontSize').value.trim();
         const colorAnn = document.getElementById('settingColorAnn').value;
         const colorVeh = document.getElementById('settingColorVeh').value;
-        const colorAnnText = document.getElementById('settingColorAnnText').value;
-        const colorVehText = document.getElementById('settingColorVehText').value;
-
         // Provide defaults if empty
         const settings = {
             calendarMinWidth: calendarMinWidth || '100%',
@@ -294,8 +303,16 @@ const Settings = {
             calendarFontSize: calendarFontSize || '11',
             colorAnn: colorAnn || '#6c63ff',
             colorVeh: colorVeh || '#ff6b9d',
-            colorAnnText: colorAnnText || '#596275',
-            colorVehText: colorVehText || '#596275'
+            colorAnnTime: document.getElementById('settingColorAnnTime').value || '#596275',
+            colorAnnLocation: document.getElementById('settingColorAnnLocation').value || '#596275',
+            colorAnnCoop: document.getElementById('settingColorAnnCoop').value || '#596275',
+            colorAnnGroup: document.getElementById('settingColorAnnGroup').value || '#596275',
+            colorAnnDetail: document.getElementById('settingColorAnnDetail').value || '#596275',
+            colorVehRequestor: document.getElementById('settingColorVehRequestor').value || '#596275',
+            colorVehDeparture: document.getElementById('settingColorVehDeparture').value || '#596275',
+            colorVehReturn: document.getElementById('settingColorVehReturn').value || '#596275',
+            colorVehDestination: document.getElementById('settingColorVehDestination').value || '#596275',
+            colorVehPurpose: document.getElementById('settingColorVehPurpose').value || '#596275'
         };
 
         const btn = document.getElementById('btnSaveSettings');
@@ -1108,11 +1125,11 @@ const Calendar = {
                     html += `
                         <div class="list-group-item bg-transparent border-bottom">
                             <h6 class="mb-1 text-primary">${escapeHtml(ev.label)}</h6>
-                            <p class="mb-1 small text-secondary" style="color: var(--color-ann-text, var(--text-secondary)) !important;"><i class="fas fa-clock me-1"></i> เวลา: ${timeDisplay}</p>
-                            <p class="mb-1 small text-secondary" style="color: var(--color-ann-text, var(--text-secondary)) !important;"><i class="fas fa-map-marker-alt me-1"></i> สถานที่: ${escapeHtml(ev.location || '-')}</p>
-                            <p class="mb-1 small text-secondary" style="color: var(--color-ann-text, var(--text-secondary)) !important;"><i class="fas fa-handshake me-1"></i> สหกรณ์จังหวัดระยอง: ${escapeHtml(ev.coopParticipation || '-')}</p>
-                            <p class="mb-1 small text-secondary" style="color: var(--color-ann-text, var(--text-secondary)) !important;"><i class="fas fa-layer-group me-1"></i> กลุ่มงาน: ${escapeHtml(ev.workGroup || '-')}</p>
-                            <p class="mb-1 small text-secondary" style="color: var(--color-ann-text, var(--text-secondary)) !important;"><i class="fas fa-file-alt me-1"></i> รายละเอียด: ${escapeHtml(ev.detail || '-')}</p>
+                            <p class="mb-1 small" style="color: var(--color-ann-time, var(--text-secondary)) !important;"><i class="fas fa-clock me-1"></i> เวลา: ${timeDisplay}</p>
+                            <p class="mb-1 small" style="color: var(--color-ann-location, var(--text-secondary)) !important;"><i class="fas fa-map-marker-alt me-1"></i> สถานที่: ${escapeHtml(ev.location || '-')}</p>
+                            <p class="mb-1 small" style="color: var(--color-ann-coop, var(--text-secondary)) !important;"><i class="fas fa-handshake me-1"></i> สหกรณ์จังหวัดระยอง: ${escapeHtml(ev.coopParticipation || '-')}</p>
+                            <p class="mb-1 small" style="color: var(--color-ann-group, var(--text-secondary)) !important;"><i class="fas fa-layer-group me-1"></i> กลุ่มงาน: ${escapeHtml(ev.workGroup || '-')}</p>
+                            <p class="mb-1 small" style="color: var(--color-ann-detail, var(--text-secondary)) !important;"><i class="fas fa-file-alt me-1"></i> รายละเอียด: ${escapeHtml(ev.detail || '-')}</p>
                             <hr style="border-color: var(--border-color); margin: 8px 0;">
                             <small class="text-muted d-block text-end fst-italic" style="font-size:0.7em;"><i class="fas fa-user me-1"></i> ผู้สร้างโพสนี้: ${escapeHtml(ev.postedBy)}</small>
                         </div>
@@ -1124,13 +1141,13 @@ const Calendar = {
                                 <h6 class="mb-0 text-primary">🚗 เลขทะเบียน : ${escapeHtml(ev.label)} <span class="${ev.driver === 'พนักงานขับรถลา' ? 'fw-bold' : 'fw-normal'}" style="font-size:0.85em;${ev.driver === 'พนักงานขับรถลา' ? 'color:#dc3545;' : 'color:var(--text-muted);'}">(พนักงานขับรถ : ${escapeHtml(ev.driver || '-')})</span></h6>
                                 <span class="badge-status badge-${(ev.status || '').toLowerCase()}">${escapeHtml(ev.status)}</span>
                             </div>
-                            <p class="mb-1 small text-secondary" style="color: var(--color-veh-text, var(--text-secondary)) !important;"><i class="fas fa-user-tag me-1"></i> ผู้ขอใช้รถ : ${escapeHtml(ev.requestor || '-')}</p>
-                            <div class="d-flex gap-3 mb-1 small text-secondary" style="color: var(--color-veh-text, var(--text-secondary)) !important;">
-                                <span><i class="fas fa-clock me-1"></i> เวลาไป : ${formatTime(ev.departureTime)}</span>
-                                <span><i class="fas fa-clock me-1"></i> เวลากลับ : ${formatTime(ev.returnTime)}</span>
+                            <p class="mb-1 small" style="color: var(--color-veh-requestor, var(--text-secondary)) !important;"><i class="fas fa-user-tag me-1"></i> ผู้ขอใช้รถ : ${escapeHtml(ev.requestor || '-')}</p>
+                            <div class="d-flex gap-3 mb-1 small">
+                                <span style="color: var(--color-veh-departure, var(--text-secondary)) !important;"><i class="fas fa-clock me-1"></i> เวลาไป : ${formatTime(ev.departureTime)}</span>
+                                <span style="color: var(--color-veh-return, var(--text-secondary)) !important;"><i class="fas fa-clock me-1"></i> เวลากลับ : ${formatTime(ev.returnTime)}</span>
                             </div>
-                            <p class="mb-1 small text-secondary" style="color: var(--color-veh-text, var(--text-secondary)) !important;"><i class="fas fa-map-marker-alt me-1"></i> สถานที่ : ${escapeHtml(ev.destination || '-')}</p>
-                            <p class="mb-0 small text-secondary" style="color: var(--color-veh-text, var(--text-secondary)) !important;"><i class="fas fa-bullseye me-1"></i> เพื่อ : ${escapeHtml(ev.purpose || '-')}</p>
+                            <p class="mb-1 small" style="color: var(--color-veh-destination, var(--text-secondary)) !important;"><i class="fas fa-map-marker-alt me-1"></i> สถานที่ : ${escapeHtml(ev.destination || '-')}</p>
+                            <p class="mb-0 small" style="color: var(--color-veh-purpose, var(--text-secondary)) !important;"><i class="fas fa-bullseye me-1"></i> เพื่อ : ${escapeHtml(ev.purpose || '-')}</p>
                             <hr style="border-color: var(--border-color); margin: 8px 0;">
                             <small class="text-muted d-block text-end fst-italic" style="font-size:0.7em;"><i class="fas fa-user me-1"></i> ผู้สร้างโพสนี้: ${escapeHtml(ev.postedBy || '-')}</small>
                         </div>
