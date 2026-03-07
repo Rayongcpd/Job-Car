@@ -204,7 +204,7 @@ const Settings = {
     data: {},
 
     /**
-     * Color presets: 6 for Announcements, 6 for Vehicles (12 total).
+     * Color presets: 10+default for Announcements, 10+default for Vehicles (22 total).
      * Apply with applyPreset('ann', i) or applyPreset('veh', i).
      */
     PRESETS: {
@@ -238,6 +238,31 @@ const Settings = {
                 name: '\ud83c\udf19 Midnight Chic',
                 colorAnn: '#3d405b', colorAnnTime: '#81b29a', colorAnnLocation: '#f2cc8f',
                 colorAnnCoop: '#f4f1de', colorAnnGroup: '#e07a5f', colorAnnDetail: '#81b29a'
+            },
+            {
+                name: '\ud83d\udc8e Royal Purple',
+                colorAnn: '#6a0dad', colorAnnTime: '#9b59b6', colorAnnLocation: '#8e44ad',
+                colorAnnCoop: '#d7bde2', colorAnnGroup: '#a569bd', colorAnnDetail: '#c39bd3'
+            },
+            {
+                name: '\ud83c\udf8a Coral Dawn',
+                colorAnn: '#ff6b6b', colorAnnTime: '#ee5a24', colorAnnLocation: '#f79f1f',
+                colorAnnCoop: '#ffc312', colorAnnGroup: '#c0392b', colorAnnDetail: '#ff9ff3'
+            },
+            {
+                name: '\ud83c\udf0c Deep Universe',
+                colorAnn: '#0c0032', colorAnnTime: '#190061', colorAnnLocation: '#240090',
+                colorAnnCoop: '#3500d3', colorAnnGroup: '#282828', colorAnnDetail: '#3500d3'
+            },
+            {
+                name: '\ud83e\udded Desert Dusk',
+                colorAnn: '#b5451b', colorAnnTime: '#e7835a', colorAnnLocation: '#ebb28e',
+                colorAnnCoop: '#8c5523', colorAnnGroup: '#c87941', colorAnnDetail: '#f9dbc0'
+            },
+            {
+                name: '\ud83e\udd84 Pastel Dream',
+                colorAnn: '#c77dff', colorAnnTime: '#a29bfe', colorAnnLocation: '#74b9ff',
+                colorAnnCoop: '#81ecec', colorAnnGroup: '#fd79a8', colorAnnDetail: '#fdcb6e'
             }
         ],
         veh: [
@@ -270,6 +295,31 @@ const Settings = {
                 name: '\ud83c\udf3f Mint Fresh',
                 colorVeh: '#10b981', colorVehRequestor: '#059669', colorVehDeparture: '#047857',
                 colorVehReturn: '#065f46', colorVehDestination: '#6ee7b7', colorVehPurpose: '#a7f3d0'
+            },
+            {
+                name: '\ud83c\udf39 Rose Gold',
+                colorVeh: '#c9446e', colorVehRequestor: '#e8749a', colorVehDeparture: '#d4a5a5',
+                colorVehReturn: '#b5446e', colorVehDestination: '#f4c2c2', colorVehPurpose: '#e8acd0'
+            },
+            {
+                name: '\ud83c\udf29\ufe0f Storm Grey',
+                colorVeh: '#636e72', colorVehRequestor: '#2d3436', colorVehDeparture: '#74b9ff',
+                colorVehReturn: '#b2bec3', colorVehDestination: '#dfe6e9', colorVehPurpose: '#81ecec'
+            },
+            {
+                name: '\ud83d\udccd Crimson Tide',
+                colorVeh: '#8b0000', colorVehRequestor: '#dc143c', colorVehDeparture: '#ff6347',
+                colorVehReturn: '#b22222', colorVehDestination: '#cd5c5c', colorVehPurpose: '#f08080'
+            },
+            {
+                name: '\ud83d\udcda Sapphire Blue',
+                colorVeh: '#1a5276', colorVehRequestor: '#1f618d', colorVehDeparture: '#2e86c1',
+                colorVehReturn: '#3498db', colorVehDestination: '#85c1e9', colorVehPurpose: '#aed6f1'
+            },
+            {
+                name: '\ud83c\udf5c Neon Lime',
+                colorVeh: '#39d353', colorVehRequestor: '#00b300', colorVehDeparture: '#009900',
+                colorVehReturn: '#7fff00', colorVehDestination: '#adff2f', colorVehPurpose: '#ccff66'
             }
         ]
     },
