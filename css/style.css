@@ -464,6 +464,8 @@ input:checked+.slider .fa-moon {
     margin-left: 260px;
     padding: 32px;
     min-height: 100vh;
+    width: calc(100% - 260px);
+    /* Fill remaining space minus sidebar */
     transition: var(--transition);
 }
 
@@ -570,11 +572,13 @@ input:checked+.slider .fa-moon {
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
     overflow: visible;
+    width: 100%;
 }
 
 .table-responsive {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    width: 100%;
 }
 
 .filter-toolbar {
