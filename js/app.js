@@ -1520,7 +1520,7 @@ const Dashboard = {
         // Count by License
         const counts = {};
         vehicles.forEach(v => {
-            const license = v.CarLicense || 'ไม่ระบุ';
+            const license = (v.CarLicense || 'ไม่ระบุ').trim().replace(/\s+/g, ' ');
             counts[license] = (counts[license] || 0) + 1;
         });
 
