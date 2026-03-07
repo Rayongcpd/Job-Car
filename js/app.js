@@ -1166,6 +1166,16 @@ function showApp() {
             el.style.display = 'block';
         });
 
+        // Show Settings Menu if Superadmin
+        const settingsMenu = document.getElementById('settingsMenuLink');
+        if (settingsMenu) {
+            if (AppState.isSuperAdmin()) {
+                settingsMenu.classList.remove('d-none');
+            } else {
+                settingsMenu.classList.add('d-none');
+            }
+        }
+
     } else {
         // Guest
         document.getElementById('userDisplayName').textContent = 'ผู้เยี่ยมชม';
@@ -1185,6 +1195,12 @@ function showApp() {
         document.querySelectorAll('.auth-only').forEach(el => {
             el.style.display = 'none';
         });
+
+        // Hide Settings Menu
+        const settingsMenu = document.getElementById('settingsMenuLink');
+        if (settingsMenu) {
+            settingsMenu.classList.add('d-none');
+        }
     }
 
     // Refresh current view if we are already viewing data
