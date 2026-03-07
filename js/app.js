@@ -222,12 +222,18 @@ const Settings = {
         const root = document.documentElement;
         if (this.data.calendarMinWidth) {
             root.style.setProperty('--calendar-min-width', this.data.calendarMinWidth);
+            console.log("Applied min-width:", this.data.calendarMinWidth);
         }
         if (this.data.calendarCellMinHeight) {
-            root.style.setProperty('--calendar-cell-min-height', this.data.calendarCellMinHeight + 'px');
+            // Check if string ends with px or %, if not add px
+            const heightVal = isNaN(this.data.calendarCellMinHeight) ? this.data.calendarCellMinHeight : this.data.calendarCellMinHeight + 'px';
+            root.style.setProperty('--calendar-cell-min-height', heightVal);
+            console.log("Applied height:", heightVal);
         }
         if (this.data.calendarFontSize) {
-            root.style.setProperty('--calendar-font-size', this.data.calendarFontSize + 'px');
+            const fontVal = isNaN(this.data.calendarFontSize) ? this.data.calendarFontSize : this.data.calendarFontSize + 'px';
+            root.style.setProperty('--calendar-font-size', fontVal);
+            console.log("Applied font size:", fontVal);
         }
     },
 

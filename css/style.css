@@ -964,7 +964,7 @@ input:checked+.slider .fa-moon {
     display: grid;
     grid-template-columns: repeat(7, minmax(100px, 1fr));
     /* Allow equal fraction but respect width constraints */
-    min-width: var(--calendar-min-width, 100%);
+    width: var(--calendar-min-width, 100%);
     padding: 8px;
 }
 
