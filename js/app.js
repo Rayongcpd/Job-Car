@@ -221,8 +221,13 @@ const Settings = {
     applyToCSS() {
         const root = document.documentElement;
         if (this.data.calendarMinWidth) {
-            root.style.setProperty('--calendar-min-width', this.data.calendarMinWidth);
-            console.log("Applied min-width:", this.data.calendarMinWidth);
+            // Default to % if numeric only (e.g. they type 100 instead of 100%)
+            let widthVal = this.data.calendarMinWidth;
+            if (!isNaN(widthVal) && widthVal !== '') {
+                widthVal += '%';
+            }
+            root.style.setProperty('--calendar-min-width', widthVal);
+            console.log("Applied min-width:", widthVal);
         }
         if (this.data.calendarCellMinHeight) {
             // Check if string ends with px or %, if not add px
