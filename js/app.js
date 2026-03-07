@@ -203,6 +203,114 @@ const Auth = {
 const Settings = {
     data: {},
 
+    /**
+     * Unified color presets shared between Announcements and Vehicles.
+     * Each preset has colors for both sections (ann* and veh* keys).
+     * applyPreset(section, index) filters by the section prefix.
+     */
+    PRESETS: [
+        {
+            name: '\u2b50 \u0e04\u0e48\u0e32\u0e40\u0e23\u0e34\u0e48\u0e21\u0e15\u0e49\u0e19',
+            gradient: 'linear-gradient(135deg, #6c63ff, #ff6b9d)',
+            // Announcements
+            colorAnn: '#6c63ff', colorAnnTime: '#596275', colorAnnLocation: '#596275',
+            colorAnnCoop: '#596275', colorAnnGroup: '#596275', colorAnnDetail: '#596275',
+            // Vehicles
+            colorVeh: '#ff6b9d', colorVehRequestor: '#596275', colorVehDeparture: '#596275',
+            colorVehReturn: '#596275', colorVehDestination: '#596275', colorVehPurpose: '#596275'
+        },
+        {
+            name: '\ud83c\udf0a Ocean Breeze',
+            gradient: 'linear-gradient(135deg, #4361ee, #48cae4)',
+            // Announcements
+            colorAnn: '#4361ee', colorAnnTime: '#0096c7', colorAnnLocation: '#0077b6',
+            colorAnnCoop: '#023e8a', colorAnnGroup: '#48cae4', colorAnnDetail: '#90e0ef',
+            // Vehicles
+            colorVeh: '#4361ee', colorVehRequestor: '#0096c7', colorVehDeparture: '#0077b6',
+            colorVehReturn: '#023e8a', colorVehDestination: '#48cae4', colorVehPurpose: '#90e0ef'
+        },
+        {
+            name: '\ud83c\udf38 Cherry Blossom',
+            gradient: 'linear-gradient(135deg, #e63946, #7209b7)',
+            // Announcements
+            colorAnn: '#e63946', colorAnnTime: '#f72585', colorAnnLocation: '#b5179e',
+            colorAnnCoop: '#7209b7', colorAnnGroup: '#e91e63', colorAnnDetail: '#9c27b0',
+            // Vehicles
+            colorVeh: '#e63946', colorVehRequestor: '#f72585', colorVehDeparture: '#b5179e',
+            colorVehReturn: '#7209b7', colorVehDestination: '#e91e63', colorVehPurpose: '#9c27b0'
+        },
+        {
+            name: '\ud83c\udf3f Emerald Forest',
+            gradient: 'linear-gradient(135deg, #2d6a4f, #95d5b2)',
+            // Announcements
+            colorAnn: '#2d6a4f', colorAnnTime: '#40916c', colorAnnLocation: '#52b788',
+            colorAnnCoop: '#74c69d', colorAnnGroup: '#95d5b2', colorAnnDetail: '#1b4332',
+            // Vehicles
+            colorVeh: '#2d6a4f', colorVehRequestor: '#40916c', colorVehDeparture: '#52b788',
+            colorVehReturn: '#74c69d', colorVehDestination: '#95d5b2', colorVehPurpose: '#1b4332'
+        },
+        {
+            name: '\ud83c\udf05 Sunset Gold',
+            gradient: 'linear-gradient(135deg, #e76f51, #e9c46a)',
+            // Announcements
+            colorAnn: '#e76f51', colorAnnTime: '#f4a261', colorAnnLocation: '#e9c46a',
+            colorAnnCoop: '#264653', colorAnnGroup: '#2a9d8f', colorAnnDetail: '#e9c46a',
+            // Vehicles
+            colorVeh: '#e76f51', colorVehRequestor: '#f4a261', colorVehDeparture: '#e9c46a',
+            colorVehReturn: '#264653', colorVehDestination: '#2a9d8f', colorVehPurpose: '#e9c46a'
+        },
+        {
+            name: '\ud83c\udf19 Midnight Chic',
+            gradient: 'linear-gradient(135deg, #3d405b, #e07a5f)',
+            // Announcements
+            colorAnn: '#3d405b', colorAnnTime: '#81b29a', colorAnnLocation: '#f2cc8f',
+            colorAnnCoop: '#f4f1de', colorAnnGroup: '#e07a5f', colorAnnDetail: '#81b29a',
+            // Vehicles
+            colorVeh: '#3d405b', colorVehRequestor: '#81b29a', colorVehDeparture: '#f2cc8f',
+            colorVehReturn: '#f4f1de', colorVehDestination: '#e07a5f', colorVehPurpose: '#81b29a'
+        }
+    ],
+
+    /**
+     * Apply a unified preset to all color pickers for a given section.
+     * @param {'ann'|'veh'} section - which section to apply to
+     * @param {number} index - index in the unified PRESETS array
+     */
+    applyPreset(section, index) {
+        const preset = this.PRESETS[index];
+        if (!preset) return;
+
+        // Highlight active swatch in this section only
+        document.querySelectorAll(`.preset-swatch-${section}`).forEach((el, i) => {
+            el.classList.toggle('active', i === index);
+        });
+
+        // Map preset keys to input element IDs
+        const idMap = {
+            colorAnn: 'settingColorAnn',
+            colorAnnTime: 'settingColorAnnTime',
+            colorAnnLocation: 'settingColorAnnLocation',
+            colorAnnCoop: 'settingColorAnnCoop',
+            colorAnnGroup: 'settingColorAnnGroup',
+            colorAnnDetail: 'settingColorAnnDetail',
+            colorVeh: 'settingColorVeh',
+            colorVehRequestor: 'settingColorVehRequestor',
+            colorVehDeparture: 'settingColorVehDeparture',
+            colorVehReturn: 'settingColorVehReturn',
+            colorVehDestination: 'settingColorVehDestination',
+            colorVehPurpose: 'settingColorVehPurpose'
+        };
+
+        // Apply only keys for this section
+        Object.entries(preset).forEach(([key, value]) => {
+            if (key === 'name' || key === 'gradient') return;
+            const keySection = key.startsWith('colorAnn') ? 'ann' : 'veh';
+            if (keySection !== section) return;
+            const el = document.getElementById(idMap[key]);
+            if (el) el.value = value;
+        });
+    },
+
     /** Initialize by loading and applying settings */
     async init() {
         await this.load();
