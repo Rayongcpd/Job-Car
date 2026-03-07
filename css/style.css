@@ -962,8 +962,16 @@ input:checked+.slider .fa-moon {
 
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(100px, 1fr));
+    /* Allow equal fraction but respect width constraints */
+    min-width: var(--calendar-min-width, 100%);
     padding: 8px;
+}
+
+/* Container to allow horizontal scroll on small screens */
+.calendar-container-scroll {
+    overflow-x: auto;
+    width: 100%;
 }
 
 .calendar-day-name {
@@ -981,7 +989,7 @@ input:checked+.slider .fa-moon {
 }
 
 .calendar-day {
-    min-height: 100px;
+    min-height: var(--calendar-cell-min-height, 100px);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     margin: 2px;
@@ -1034,7 +1042,7 @@ input:checked+.slider .fa-moon {
 }
 
 .calendar-event {
-    font-size: 11px;
+    font-size: var(--calendar-font-size, 11px);
     padding: 2px 6px;
     border-radius: 4px;
     margin-bottom: 2px;

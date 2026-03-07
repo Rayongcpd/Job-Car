@@ -43,13 +43,32 @@ const AppState = {
 
     /** Check if user is Admin */
     isAdmin() {
-        return this.user && this.user.role === 'Admin';
+        return this.user && (this.user.role === 'Admin' || this.user.role === 'Superadmin');
+    },
+
+    /** Check if user is Superadmin */
+    isSuperAdmin() {
+        return this.user && this.user.role === 'Superadmin';
     },
 
     /** Initialize App */
-    init() {
+    async init() {
         this.loadUser();
         ThemeModule.init();
+
+        // Load settings configuration
+        await Settings.init();
+
+        // Control sidebar settings menu visibility
+        const settingsMenu = document.getElementById('settingsMenuLink');
+        if (settingsMenu) {
+            if (this.isSuperAdmin()) {
+                settingsMenu.classList.remove('d-none');
+            } else {
+                settingsMenu.classList.add('d-none');
+            }
+        }
+
         showApp();
     }
 };
@@ -169,7 +188,97 @@ const Auth = {
         if (!confirm('ยืนยันการออกจากระบบ?')) return;
         AppState.clearUser();
         showApp(); // Refresh as guest
+
+        // Hide settings menu
+        const settingsMenu = document.getElementById('settingsMenuLink');
+        if (settingsMenu) settingsMenu.classList.add('d-none');
+
         showToast('ออกจากระบบแล้ว', 'info');
+    }
+};
+
+// ============================================================
+// ⚙️ SETTINGS MODULE
+// ============================================================
+const Settings = {
+    data: {},
+
+    /** Initialize by loading and applying settings */
+    async init() {
+        await this.load();
+        this.applyToCSS();
+    },
+
+    /** Fetch settings from API */
+    async load() {
+        const result = await API.get({ action: 'getSettings' });
+        if (result.success && result.data) {
+            this.data = result.data;
+        }
+    },
+
+    /** Apply loaded settings to CSS :root variables */
+    applyToCSS() {
+        const root = document.documentElement;
+        if (this.data.calendarMinWidth) {
+            root.style.setProperty('--calendar-min-width', this.data.calendarMinWidth);
+        }
+        if (this.data.calendarCellMinHeight) {
+            root.style.setProperty('--calendar-cell-min-height', this.data.calendarCellMinHeight + 'px');
+        }
+        if (this.data.calendarFontSize) {
+            root.style.setProperty('--calendar-font-size', this.data.calendarFontSize + 'px');
+        }
+    },
+
+    /** Show settings modal and populate current values */
+    showModal() {
+        if (!AppState.isSuperAdmin()) return;
+
+        document.getElementById('settingCalendarWidth').value = this.data.calendarMinWidth || '100%';
+        document.getElementById('settingCellHeight').value = this.data.calendarCellMinHeight || '100';
+        document.getElementById('settingFontSize').value = this.data.calendarFontSize || '11';
+
+        new bootstrap.Modal(document.getElementById('settingsModal')).show();
+    },
+
+    /** Save settings to API and apply immediately */
+    async save() {
+        if (!AppState.isSuperAdmin()) return;
+
+        const calendarMinWidth = document.getElementById('settingCalendarWidth').value.trim();
+        const calendarCellMinHeight = document.getElementById('settingCellHeight').value.trim();
+        const calendarFontSize = document.getElementById('settingFontSize').value.trim();
+
+        // Provide defaults if empty
+        const settings = {
+            calendarMinWidth: calendarMinWidth || '100%',
+            calendarCellMinHeight: calendarCellMinHeight || '100',
+            calendarFontSize: calendarFontSize || '11'
+        };
+
+        const btn = document.getElementById('btnSaveSettings');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังบันทึก...';
+
+        const result = await API.post({
+            action: 'updateSettings',
+            settings: settings
+        });
+
+        if (result.success) {
+            showToast(result.message, 'success');
+            // Update local data and apply
+            this.data = settings;
+            this.applyToCSS();
+
+            bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
+        } else {
+            showToast(result.error || 'บันทึกไม่สำเร็จ', 'error');
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save me-2"></i>บันทึกการตั้งค่า';
     }
 };
 

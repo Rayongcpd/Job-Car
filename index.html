@@ -60,7 +60,7 @@
           <div class="user-avatar" id="userAvatar"><i class="fas fa-user"></i></div>
           <div class="theme-switch-wrapper">
             <label class="theme-switch" for="checkbox">
-              <input type="checkbox" id="checkbox" onchange="toggleTheme()">
+              <input type="checkbox" id="checkbox" onchange="ThemeModule.toggleTheme()">
               <div class="slider">
                 <i class="fas fa-sun"></i>
                 <i class="fas fa-moon"></i>
@@ -74,6 +74,9 @@
         </div>
         <a id="authMenuLink" class="nav-link mt-2" onclick="Auth.checkAuthAction()">
           <i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ
+        </a>
+        <a id="settingsMenuLink" class="nav-link mt-2 d-none" onclick="Settings.showModal()">
+          <i class="fas fa-cog"></i> ตั้งค่าปฏิทิน
         </a>
       </div>
     </nav>
@@ -107,8 +110,10 @@
             <span class="legend-item"><span class="legend-dot vehicle"></span>บันทึกการขอใช้รถราชการ</span>
           </div>
 
-          <div class="calendar-grid" id="calendarGrid">
-            <!-- Rendered by JS -->
+          <div class="calendar-container-scroll">
+            <div class="calendar-grid" id="calendarGrid">
+              <!-- Rendered by JS -->
+            </div>
           </div>
         </div>
       </div>
