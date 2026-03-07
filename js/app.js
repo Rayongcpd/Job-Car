@@ -1179,6 +1179,11 @@ function showApp() {
             el.style.display = AppState.isAdmin() ? 'inline-block' : 'none';
         });
 
+        // Show SuperAdmin Only Elements
+        document.querySelectorAll('.superadmin-only').forEach(el => {
+            el.style.display = AppState.isSuperAdmin() ? 'block' : 'none';
+        });
+
         // Show Auth Only Elements
         document.querySelectorAll('.auth-only').forEach(el => {
             el.style.display = 'block';
@@ -1209,6 +1214,11 @@ function showApp() {
             el.style.display = 'none';
         });
 
+        // Hide SuperAdmin Only Elements
+        document.querySelectorAll('.superadmin-only').forEach(el => {
+            el.style.display = 'none';
+        });
+
         // Hide Auth Only Elements
         document.querySelectorAll('.auth-only').forEach(el => {
             el.style.display = 'none';
@@ -1229,6 +1239,7 @@ function showApp() {
         if (pageId === 'announcements') Announcements.render(AppState.announcements);
         if (pageId === 'vehicles') VehicleLogs.render(AppState.vehicleLogs);
         if (pageId === 'calendar') Calendar.load();
+        if (pageId === 'logs') SystemLogs.load();
     } else {
         // Default to calendar
         navigateTo('calendar');
@@ -1257,6 +1268,9 @@ function navigateTo(page) {
             break;
         case 'vehicles':
             VehicleLogs.load();
+            break;
+        case 'logs':
+            SystemLogs.load();
             break;
     }
 
@@ -1462,3 +1476,56 @@ const ThemeModule = {
 function toggleTheme() {
     ThemeModule.toggle();
 }
+
+// ============================================================
+// 📋 SYSTEM LOGS MODULE
+// ============================================================
+const SystemLogs = {
+    /** Fetch and render all system logs */
+    async load() {
+        if (!AppState.isSuperAdmin()) return;
+
+        const container = document.getElementById('logsTableBody');
+        container.innerHTML = loadingHTML();
+
+        const result = await API.get({ action: 'getLogs', username: AppState.user.username, password: AppState.user.password });
+
+        if (result.success) {
+            this.render(result.data);
+        } else {
+            container.innerHTML = emptyHTML(result.error || 'ไม่สามารถโหลดข้อมูลบันทึกระบบได้');
+        }
+    },
+
+    /** Render logs table */
+    render(data) {
+        const container = document.getElementById('logsTableBody');
+
+        if (!data || data.length === 0) {
+            container.innerHTML = `<tr><td colspan="5">${emptyHTML('ยังไม่มีบันทึกข้อมูล')}</td></tr>`;
+            return;
+        }
+
+        container.innerHTML = data.map((item, index) => {
+            const dateObj = new Date(item.Timestamp);
+            // Format to basic Thai display with time
+            const dateDisplay = isNaN(dateObj.getTime()) ? escapeHtml(item.Timestamp) :
+                formatThaiDate(item.Timestamp) + ' ' + dateObj.toLocaleTimeString('th-TH');
+
+            let actionColor = 'var(--text-color)';
+            if (item.Action === 'Add') actionColor = '#28a745';
+            else if (item.Action === 'Update') actionColor = '#ffc107';
+            else if (item.Action === 'Delete') actionColor = '#dc3545';
+
+            return `
+      <tr class="fade-in" style="animation-delay: ${Math.min(index * 0.02, 0.5)}s">
+        <td data-label="วันที่/เวลา" style="white-space: nowrap;">${dateDisplay}</td>
+        <td data-label="ผู้ใช้งาน"><strong>${escapeHtml(item.Username || '-')}</strong></td>
+        <td data-label="การกระทำ"><span style="color: ${actionColor}; font-weight: bold;">${escapeHtml(item.Action || '-')}</span></td>
+        <td data-label="ส่วนงาน">${escapeHtml(item.Module || '-')}</td>
+        <td data-label="รายละเอียด" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.Detail || '-')}</td>
+      </tr>
+    `;
+        }).join('');
+    }
+};
