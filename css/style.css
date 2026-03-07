@@ -962,9 +962,10 @@ input:checked+.slider .fa-moon {
 
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, minmax(100px, 1fr));
-    /* Allow equal fraction but respect width constraints */
-    width: var(--calendar-min-width, 100%);
+    /* ยืดตามความกว้างแบบ 1 ส่วนเท่าๆ กัน เพื่อไม่ให้มีที่ว่างเหลือด้านข้าง */
+    grid-template-columns: repeat(7, 1fr);
+    min-width: var(--calendar-min-width, 100%);
+    width: 100%;
     padding: 8px;
 }
 
