@@ -957,11 +957,11 @@ input:checked+.slider .fa-moon {
 }
 
 .legend-dot.announcement {
-    background: var(--accent-primary);
+    background: var(--color-announcement, var(--accent-primary));
 }
 
 .legend-dot.vehicle {
-    background: var(--accent-secondary);
+    background: var(--color-vehicle, var(--accent-secondary));
 }
 
 .calendar-grid {
@@ -1067,13 +1067,13 @@ input:checked+.slider .fa-moon {
 
 .calendar-event.announcement {
     background: rgba(108, 99, 255, 0.8);
-    background: var(--accent-primary);
+    background: var(--color-announcement, var(--accent-primary));
     border-left: 3px solid rgba(255, 255, 255, 0.5);
 }
 
 .calendar-event.vehicle {
     background: rgba(255, 107, 157, 0.8);
-    background: var(--accent-secondary);
+    background: var(--color-vehicle, var(--accent-secondary));
     border-left: 3px solid rgba(255, 255, 255, 0.5);
 }
 

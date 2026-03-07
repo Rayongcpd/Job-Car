@@ -240,6 +240,14 @@ const Settings = {
             root.style.setProperty('--calendar-font-size', fontVal);
             console.log("Applied font size:", fontVal);
         }
+        if (this.data.colorAnn) {
+            root.style.setProperty('--color-announcement', this.data.colorAnn);
+            console.log("Applied color announcement:", this.data.colorAnn);
+        }
+        if (this.data.colorVeh) {
+            root.style.setProperty('--color-vehicle', this.data.colorVeh);
+            console.log("Applied color vehicle:", this.data.colorVeh);
+        }
     },
 
     /** Show settings modal and populate current values */
@@ -249,6 +257,10 @@ const Settings = {
         document.getElementById('settingCalendarWidth').value = this.data.calendarMinWidth || '100%';
         document.getElementById('settingCellHeight').value = this.data.calendarCellMinHeight || '100';
         document.getElementById('settingFontSize').value = this.data.calendarFontSize || '11';
+
+        // Set colors, fallback to defaults if not set
+        document.getElementById('settingColorAnn').value = this.data.colorAnn || '#6c63ff';
+        document.getElementById('settingColorVeh').value = this.data.colorVeh || '#ff6b9d';
 
         new bootstrap.Modal(document.getElementById('settingsModal')).show();
     },
@@ -260,12 +272,16 @@ const Settings = {
         const calendarMinWidth = document.getElementById('settingCalendarWidth').value.trim();
         const calendarCellMinHeight = document.getElementById('settingCellHeight').value.trim();
         const calendarFontSize = document.getElementById('settingFontSize').value.trim();
+        const colorAnn = document.getElementById('settingColorAnn').value;
+        const colorVeh = document.getElementById('settingColorVeh').value;
 
         // Provide defaults if empty
         const settings = {
             calendarMinWidth: calendarMinWidth || '100%',
             calendarCellMinHeight: calendarCellMinHeight || '100',
-            calendarFontSize: calendarFontSize || '11'
+            calendarFontSize: calendarFontSize || '11',
+            colorAnn: colorAnn || '#6c63ff',
+            colorVeh: colorVeh || '#ff6b9d'
         };
 
         const btn = document.getElementById('btnSaveSettings');
