@@ -619,31 +619,67 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body pb-0">
-          <div class="mb-3">
-            <label class="form-label">ความกว้างตารางปฏิทินขั้นต่ำ (px หรือ %)</label>
-            <input type="text" class="form-control" id="settingCalendarWidth" placeholder="ตัวอย่าง: 100%, 800px"
-              value="100%">
-            <div class="form-text">ถ้ากำหนดค่า px เช่น 800px หากหน้าจอเล็กกว่า 800px ตารางจะสามารถเลื่อนซ้ายขวาได้</div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">ความสูงขั้นต่ำของช่องวันที่ (px)</label>
-            <input type="number" class="form-control" id="settingCellHeight" placeholder="ตัวอย่าง: 100" value="100"
-              min="50">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">ขนาดตัวอักษรของกิจกรรม (px)</label>
-            <input type="number" class="form-control" id="settingFontSize" placeholder="ตัวอย่าง: 11" value="11" min="8"
-              max="24">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">สีพื้นหลังการปฏิบัติงาน</label>
-            <input type="color" class="form-control form-control-color p-1 w-100" id="settingColorAnn" value="#6c63ff"
-              title="เลือกสีการปฏิบัติงาน" style="height: 40px;">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">สีพื้นหลังการขอใช้รถราชการ</label>
-            <input type="color" class="form-control form-control-color p-1 w-100" id="settingColorVeh" value="#ff6b9d"
-              title="เลือกสีการขอใช้รถราชการ" style="height: 40px;">
+          <ul class="nav nav-tabs" id="settingsTab" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="size-tab" data-bs-toggle="tab" data-bs-target="#size" type="button"
+                role="tab" aria-controls="size" aria-selected="true"><i
+                  class="fas fa-expand-arrows-alt me-1"></i>ขนาดและการแสดงผล</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="color-tab" data-bs-toggle="tab" data-bs-target="#color" type="button"
+                role="tab" aria-controls="color" aria-selected="false"><i class="fas fa-palette me-1"></i>สีสัน</button>
+            </li>
+          </ul>
+
+          <div class="tab-content pt-3" id="settingsTabContent">
+            <!-- Tab 1: Size -->
+            <div class="tab-pane fade show active" id="size" role="tabpanel" aria-labelledby="size-tab">
+              <div class="mb-3">
+                <label class="form-label">ความกว้างตารางปฏิทินขั้นต่ำ (px หรือ %)</label>
+                <input type="text" class="form-control" id="settingCalendarWidth" placeholder="ตัวอย่าง: 100%, 800px"
+                  value="100%">
+                <div class="form-text">ถ้ากำหนดค่า px เช่น 800px หากหน้าจอเล็กกว่า 800px ตารางจะสามารถเลื่อนซ้ายขวาได้
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">ความสูงขั้นต่ำของช่องวันที่ (px)</label>
+                <input type="number" class="form-control" id="settingCellHeight" placeholder="ตัวอย่าง: 100" value="100"
+                  min="50">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">ขนาดตัวอักษรของกิจกรรม (px)</label>
+                <input type="number" class="form-control" id="settingFontSize" placeholder="ตัวอย่าง: 11" value="11"
+                  min="8" max="24">
+              </div>
+            </div>
+
+            <!-- Tab 2: Colors -->
+            <div class="tab-pane fade" id="color" role="tabpanel" aria-labelledby="color-tab">
+              <h6 class="text-primary mb-3"><i class="fas fa-tasks me-2"></i>การปฏิบัติงาน (Announcements)</h6>
+              <div class="mb-3">
+                <label class="form-label">สีพื้นหลังรายการ</label>
+                <input type="color" class="form-control form-control-color p-1 w-100" id="settingColorAnn"
+                  value="#6c63ff" title="เลือกสีพื้นหลัง" style="height: 40px;">
+              </div>
+              <div class="mb-4">
+                <label class="form-label">สีข้อความรายละเอียด</label>
+                <input type="color" class="form-control form-control-color p-1 w-100" id="settingColorAnnText"
+                  value="#596275" title="เลือกสีข้อความ" style="height: 40px;">
+              </div>
+
+              <h6 class="text-secondary mb-3 border-top pt-3"><i class="fas fa-car me-2"></i>การขอใช้รถราชการ (Vehicles)
+              </h6>
+              <div class="mb-3">
+                <label class="form-label">สีพื้นหลังรายการ</label>
+                <input type="color" class="form-control form-control-color p-1 w-100" id="settingColorVeh"
+                  value="#ff6b9d" title="เลือกสีพื้นหลัง" style="height: 40px;">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">สีข้อความรายละเอียด</label>
+                <input type="color" class="form-control form-control-color p-1 w-100" id="settingColorVehText"
+                  value="#596275" title="เลือกสีข้อความ" style="height: 40px;">
+              </div>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
