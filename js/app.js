@@ -1510,6 +1510,7 @@ const Dashboard = {
         // Render Charts
         this.renderVehiclePieChart(vehicles);
         this.renderAnnBarChart(announcements);
+        this.renderReqBarChart(vehicles);
         this.renderMonthlyTrendChart(announcements, vehicles);
     },
 
@@ -1587,6 +1588,50 @@ const Dashboard = {
                 scales: {
                     y: { beginAtZero: true, ticks: { font: { family: 'Prompt' }, color: 'var(--text-secondary)' } },
                     x: { ticks: { font: { family: 'Prompt' }, color: 'var(--text-secondary)' } }
+                }
+            }
+        });
+    },
+
+    renderReqBarChart(vehicles) {
+        const ctx = document.getElementById('reqBarChart');
+        if (!ctx) return;
+
+        // Count by Requestor
+        const counts = {};
+        vehicles.forEach(v => {
+            let requestor = (v.Requestor || v.requestor || 'ไม่ระบุ').trim();
+            counts[requestor] = (counts[requestor] || 0) + 1;
+        });
+
+        // Sort by highest count
+        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5); // Top 5 requestors
+        const labels = sorted.map(item => item[0]);
+        const data = sorted.map(item => item[1]);
+
+        if (this.charts.reqBar) this.charts.reqBar.destroy();
+
+        this.charts.reqBar = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'จำนวนการขอใช้รถ',
+                    data: data,
+                    backgroundColor: '#2ecc71',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y', // Make it horizontal for better name readability
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Prompt' }, color: 'var(--text-secondary)' } },
+                    y: { ticks: { font: { family: 'Prompt' }, color: 'var(--text-secondary)' } }
                 }
             }
         });
