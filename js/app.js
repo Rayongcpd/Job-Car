@@ -1051,7 +1051,7 @@ const Calendar = {
         // Format dateStr (YYYY-MM-DD) to Thai date
         const [yyyy, mm, dd] = dateStr.split('-');
         const thaiYear = parseInt(yyyy) + 543;
-        const thaiMonth = Calendar.monthNames[parseInt(mm) - 1];
+        const thaiMonth = Calendar.THAI_MONTHS[parseInt(mm) - 1];
         const thaiDate = `วันที่ ${parseInt(dd)} ${thaiMonth} ${thaiYear}`;
 
         const modalTitle = `${thaiDate} - ${typeName}`;
