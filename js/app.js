@@ -733,6 +733,9 @@ const VehicleLogs = {
         <td data-label="สถานะ"><span class="badge-status badge-${(item.Status || '').toLowerCase()}">${escapeHtml(item.Status || '')}</span></td>
         <td data-label="จัดการ">
           ${AppState.isAdmin() ? `
+          <button class="btn btn-outline-custom btn-sm me-1" onclick="ExportUtils.printVehicleForm('${item.ID}')" title="พิมพ์ใบขออนุญาต">
+            <i class="fas fa-print"></i>
+          </button>
           <button class="btn btn-outline-custom btn-sm me-1" onclick="VehicleLogs.showEdit('${item.ID}')" title="แก้ไข">
             <i class="fas fa-edit"></i>
           </button>
@@ -1240,6 +1243,7 @@ function showApp() {
         if (pageId === 'vehicles') VehicleLogs.render(AppState.vehicleLogs);
         if (pageId === 'calendar') Calendar.load();
         if (pageId === 'logs') SystemLogs.load();
+        if (pageId === 'dashboard') Dashboard.load();
     } else {
         // Default to calendar
         navigateTo('calendar');
@@ -1271,6 +1275,9 @@ function navigateTo(page) {
             break;
         case 'logs':
             SystemLogs.load();
+            break;
+        case 'dashboard':
+            Dashboard.load();
             break;
     }
 
@@ -1476,6 +1483,293 @@ const ThemeModule = {
 function toggleTheme() {
     ThemeModule.toggle();
 }
+
+// ============================================================
+// 📊 DASHBOARD MODULE
+// ============================================================
+const Dashboard = {
+    charts: {},
+
+    load() {
+        if (!AppState.isAdmin()) return;
+
+        // Process existing data
+        const announcements = AppState.announcements || [];
+        const vehicles = AppState.vehicleLogs || [];
+
+        // Update Overview Cards
+        let activeVeh = 0;
+        vehicles.forEach(v => {
+            if (v.Status === 'Active') activeVeh++;
+        });
+
+        animateCounter('dashTotalAnn', announcements.length);
+        animateCounter('dashTotalVeh', vehicles.length);
+        animateCounter('dashActiveVeh', activeVeh);
+
+        // Render Charts
+        this.renderVehiclePieChart(vehicles);
+        this.renderAnnBarChart(announcements);
+        this.renderMonthlyTrendChart(announcements, vehicles);
+    },
+
+    renderVehiclePieChart(vehicles) {
+        const ctx = document.getElementById('vehiclePieChart');
+        if (!ctx) return;
+
+        // Count by License
+        const counts = {};
+        vehicles.forEach(v => {
+            const license = v.CarLicense || 'ไม่ระบุ';
+            counts[license] = (counts[license] || 0) + 1;
+        });
+
+        const labels = Object.keys(counts);
+        const data = Object.values(counts);
+
+        if (this.charts.vehiclePie) this.charts.vehiclePie.destroy();
+
+        this.charts.vehiclePie = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: ['#6c63ff', '#ff6b9d', '#2ecc71', '#f39c12', '#3498db', '#9b59b6'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { font: { family: 'Prompt' }, color: 'var(--text-primary)' } }
+                }
+            }
+        });
+    },
+
+    renderAnnBarChart(announcements) {
+        const ctx = document.getElementById('annBarChart');
+        if (!ctx) return;
+
+        // Count by WorkGroup
+        const counts = {};
+        announcements.forEach(a => {
+            const group = a.WorkGroup || 'ไม่ระบุ';
+            counts[group] = (counts[group] || 0) + 1;
+        });
+
+        // Sort by highest count
+        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10); // Top 10
+        const labels = sorted.map(item => item[0]);
+        const data = sorted.map(item => item[1]);
+
+        if (this.charts.annBar) this.charts.annBar.destroy();
+
+        this.charts.annBar = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'จำนวนงาน',
+                    data: data,
+                    backgroundColor: '#6c63ff',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { font: { family: 'Prompt' }, color: 'var(--text-secondary)' } },
+                    x: { ticks: { font: { family: 'Prompt' }, color: 'var(--text-secondary)' } }
+                }
+            }
+        });
+    },
+
+    renderMonthlyTrendChart(announcements, vehicles) {
+        const ctx = document.getElementById('monthlyTrendChart');
+        if (!ctx) return;
+
+        // Get last 6 months labels
+        const labels = [];
+        const monthsStr = [];
+        const d = new Date();
+        for (let i = 5; i >= 0; i--) {
+            const date = new Date(d.getFullYear(), d.getMonth() - i, 1);
+            labels.push(`${Calendar.THAI_MONTHS[date.getMonth()]} ${date.getFullYear() + 543}`);
+            const mStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            monthsStr.push(mStr);
+        }
+
+        // Count for each month
+        const annData = new Array(6).fill(0);
+        const vehData = new Array(6).fill(0);
+
+        announcements.forEach(a => {
+            if (!a.Date) return;
+            const dateStr = Calendar.normalizeDate(a.Date);
+            const m = dateStr.substring(0, 7);
+            const idx = monthsStr.indexOf(m);
+            if (idx !== -1) annData[idx]++;
+        });
+
+        vehicles.forEach(v => {
+            if (!v.Date) return;
+            const dateStr = Calendar.normalizeDate(v.Date);
+            const m = dateStr.substring(0, 7);
+            const idx = monthsStr.indexOf(m);
+            if (idx !== -1) vehData[idx]++;
+        });
+
+        if (this.charts.trend) this.charts.trend.destroy();
+
+        this.charts.trend = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'การปฏิบัติงาน',
+                        data: annData,
+                        borderColor: '#6c63ff',
+                        backgroundColor: 'rgba(108, 99, 255, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'การใช้รถราชการ',
+                        data: vehData,
+                        borderColor: '#2ecc71',
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { font: { family: 'Prompt' }, color: 'var(--text-primary)' } }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { font: { family: 'Prompt' }, color: 'var(--text-secondary)' } },
+                    x: { ticks: { font: { family: 'Prompt' }, color: 'var(--text-secondary)' } }
+                }
+            }
+        });
+    }
+};
+
+// ============================================================
+// 📄 EXPORT & PRINT UTILS
+// ============================================================
+const ExportUtils = {
+    /** Export current table view to Excel */
+    exportToExcel(type) {
+        let tableId = '';
+        let fileName = '';
+
+        if (type === 'announcements') {
+            tableId = 'announcementsTableBody';
+            fileName = 'รายงานการปฏิบัติงาน_' + this.getTimestamp() + '.xlsx';
+        } else if (type === 'vehicles') {
+            tableId = 'vehicleTableBody';
+            fileName = 'รายงานการขอใช้รถราชการ_' + this.getTimestamp() + '.xlsx';
+        } else {
+            return;
+        }
+
+        const table = document.getElementById(tableId).closest('table');
+        if (!table) return;
+
+        // Clone table to modify it before export
+        const cloneTable = table.cloneNode(true);
+
+        // Remove columns with 'จัดการ' or 'เอกสารแนบ' if needed, here we just remove the last column (จัดการ)
+        const ths = cloneTable.querySelectorAll('th');
+        if (ths.length > 0 && ths[ths.length - 1].innerText.includes('จัดการ')) {
+            cloneTable.querySelectorAll('tr').forEach(row => {
+                if (row.lastElementChild) {
+                    row.removeChild(row.lastElementChild);
+                }
+            });
+        }
+
+        const wb = XLSX.utils.table_to_book(cloneTable, { sheet: "Sheet1" });
+        XLSX.writeFile(wb, fileName);
+    },
+
+    /** Print simple table view */
+    printTable(type) {
+        document.body.classList.add('printing-table');
+        if (type === 'announcements') {
+            document.body.classList.add('print-announcements');
+        } else if (type === 'vehicles') {
+            document.body.classList.add('print-vehicles');
+        }
+
+        window.print();
+
+        // Clean up classes after print dialog closes
+        setTimeout(() => {
+            document.body.classList.remove('printing-table', 'print-announcements', 'print-vehicles');
+        }, 1000);
+    },
+
+    /** Generate and print the vehicle request form */
+    printVehicleForm(id) {
+        const item = AppState.vehicleLogs.find(v => v.ID === id);
+        if (!item) {
+            showToast('ไม่พบข้อมูลบันทึก', 'error');
+            return;
+        }
+
+        // Populate the print template
+        const template = document.getElementById('printTemplate');
+        if (!template) return;
+
+        const dateObj = new Date(Calendar.normalizeDate(item.Date));
+        const thaiYear = dateObj.getFullYear() + 543;
+        const thaiMonth = Calendar.THAI_MONTHS[dateObj.getMonth()];
+        const thaiDay = dateObj.getDate();
+
+        // Safe DOM updates
+        const updateText = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text || '-';
+        };
+
+        updateText('pt-date', `${thaiDay} ${thaiMonth} ${thaiYear}`);
+        updateText('pt-requestor', item.Requestor || item.requestor);
+        updateText('pt-purpose', item.Purpose);
+        updateText('pt-destination', item.Destination);
+        updateText('pt-car', item.CarLicense);
+        updateText('pt-driver', item.Driver);
+        updateText('pt-time-dep', formatTime(item.DepartureTime));
+        updateText('pt-time-ret', formatTime(item.ReturnTime));
+
+        // Trigger print mode
+        document.body.classList.add('printing-form');
+        window.print();
+
+        // Clean up
+        setTimeout(() => {
+            document.body.classList.remove('printing-form');
+        }, 1000);
+    },
+
+    getTimestamp() {
+        const d = new Date();
+        return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    }
+};
 
 // ============================================================
 // 📋 SYSTEM LOGS MODULE
