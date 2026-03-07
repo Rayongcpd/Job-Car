@@ -962,8 +962,8 @@ input:checked+.slider .fa-moon {
 
 .calendar-grid {
     display: grid;
-    /* ยืดตามความกว้างแบบ 1 ส่วนเท่าๆ กัน เพื่อไม่ให้มีที่ว่างเหลือด้านข้าง */
-    grid-template-columns: repeat(7, 1fr);
+    /* minmax(0, 1fr) บังคับให้ช่องสามารถหดเล็กลงได้เท่ากับ 0 เพื่อให้ text-overflow ทำงานได้ และไม่ดันตารางให้ยาวออกไป */
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     min-width: var(--calendar-min-width, 100%);
     width: 100%;
     padding: 8px;
