@@ -1108,3 +1108,123 @@ input:checked+.slider .fa-moon {
 .row-past:hover {
     opacity: 0.75;
 }
+
+/* ============ PRINT TEMPLATE FORMS ============ */
+.print-template-container {
+    display: none;
+}
+
+/* ============ PRINT STYLES ============ */
+@media print {
+    body {
+        background: #fff;
+        color: #000;
+        margin: 0;
+        padding: 0;
+    }
+
+    body::before {
+        display: none;
+    }
+
+    .sidebar,
+    .sidebar-toggle,
+    .btn,
+    .filter-toolbar,
+    .toast-container,
+    .modal {
+        display: none !important;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        padding: 0;
+    }
+
+    /* Print Table View */
+    .printing-table .page-section:not(.active-page) {
+        display: none !important;
+    }
+
+    .printing-table .page-header h3 {
+        text-align: center;
+        width: 100%;
+        font-size: 18pt;
+        margin-bottom: 20px;
+    }
+
+    .printing-table .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .printing-table .table th,
+    .printing-table .table td {
+        border: 1px solid #ddd !important;
+        padding: 8px !important;
+        font-size: 12pt !important;
+        color: #000 !important;
+    }
+
+    .printing-table .data-card {
+        border: none;
+        box-shadow: none;
+    }
+
+    /* Print Form View (Vehicle Request) */
+    .print-template-container {
+        display: none;
+    }
+
+    body.printing-form #appSection {
+        display: none !important;
+    }
+
+    body.printing-form .print-template-container {
+        display: block;
+        width: 100%;
+        max-width: 210mm;
+        /* A4 width */
+        margin: 0 auto;
+        padding: 20mm;
+        font-family: 'Sarabun', 'Prompt', sans-serif;
+    }
+
+    .print-form-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .print-form-title {
+        font-size: 20pt;
+        font-weight: bold;
+        margin: 0;
+    }
+
+    .print-form-body {
+        font-size: 14pt;
+        line-height: 1.8;
+    }
+
+    .print-form-row {
+        margin-bottom: 10px;
+    }
+
+    .print-form-signature {
+        margin-top: 50px;
+        display: flex;
+        justify-content: space-around;
+    }
+
+    .signature-box {
+        text-align: center;
+        width: 200px;
+    }
+
+    .signature-line {
+        border-bottom: 1px dotted #000;
+        margin-top: 50px;
+        margin-bottom: 10px;
+    }
+}
