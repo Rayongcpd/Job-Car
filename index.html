@@ -169,7 +169,7 @@
         <!-- Charts Container -->
         <div class="row g-3">
           <!-- สถิติการใช้รถราชการ (Pie Chart) -->
-          <div class="col-md-6 mb-3">
+          <div class="col-lg-4 col-md-6 mb-3">
             <div class="data-card p-3 h-100">
               <h5 class="mb-3 text-secondary" style="font-size: 16px;"><i
                   class="fas fa-chart-pie me-2"></i>สถิติการใช้รถรายคัน</h5>
@@ -179,12 +179,22 @@
             </div>
           </div>
           <!-- สถิติการปฏิบัติงานตามกลุ่มงาน (Bar Chart) -->
-          <div class="col-md-6 mb-3">
+          <div class="col-lg-4 col-md-6 mb-3">
             <div class="data-card p-3 h-100">
               <h5 class="mb-3 text-secondary" style="font-size: 16px;"><i
                   class="fas fa-chart-bar me-2"></i>การปฏิบัติงานแบ่งตามกลุ่มงาน</h5>
               <div style="position: relative; height:300px;">
                 <canvas id="annBarChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <!-- สถิติผู้ขอใช้รถ (Bar Chart) -->
+          <div class="col-lg-4 col-md-12 mb-3">
+            <div class="data-card p-3 h-100">
+              <h5 class="mb-3 text-secondary" style="font-size: 16px;"><i class="fas fa-users me-2"></i>สถิติผู้ขอใช้รถ
+              </h5>
+              <div style="position: relative; height:300px;">
+                <canvas id="reqBarChart"></canvas>
               </div>
             </div>
           </div>
