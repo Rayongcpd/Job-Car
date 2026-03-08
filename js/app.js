@@ -1514,17 +1514,9 @@ function showToast(message, type = 'info') {
 function animateCounter(elementId, target) {
     const el = document.getElementById(elementId);
     if (!el) return;
-    let current = 0;
-    const step = Math.max(1, Math.ceil(target / 30));
-    const timer = setInterval(() => {
-        current += step;
-        if (current >= target) {
-            current = target;
-            clearInterval(timer);
-        }
-        el.textContent = current.toLocaleString();
-    }, 30);
+    el.textContent = (target || 0).toLocaleString();
 }
+
 
 /** Loading HTML */
 function loadingHTML() {
@@ -1746,6 +1738,7 @@ const Dashboard = {
                 }]
             },
             options: {
+                animation: false,
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
@@ -1785,6 +1778,7 @@ const Dashboard = {
                 }]
             },
             options: {
+                animation: false,
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
@@ -1828,6 +1822,7 @@ const Dashboard = {
                 }]
             },
             options: {
+                animation: false,
                 responsive: true,
                 maintainAspectRatio: false,
                 indexAxis: 'y', // Make it horizontal for better name readability
@@ -1903,6 +1898,7 @@ const Dashboard = {
                 ]
             },
             options: {
+                animation: false,
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {

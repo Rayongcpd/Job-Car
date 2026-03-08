@@ -70,22 +70,21 @@ body {
     transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* Background animated gradient */
+/* Background static gradient (Optimized for CPU) */
 body::before {
     content: '';
     position: fixed;
-    top: -10%;
-    left: -10%;
-    width: 120%;
-    height: 120%;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background: radial-gradient(circle at 20% 50%, rgba(108, 99, 255, 0.08) 0%, transparent 50%),
         radial-gradient(circle at 80% 20%, rgba(255, 107, 157, 0.06) 0%, transparent 50%),
         radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
-    animation: bgFloat 30s ease-in-out infinite;
     z-index: -1;
     pointer-events: none;
-    will-change: transform;
 }
+
 
 
 @keyframes bgFloat {
@@ -115,8 +114,8 @@ body::before {
 
 .login-card {
     background: var(--bg-card);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
     padding: 48px 40px;
@@ -135,6 +134,7 @@ body::before {
     font-size: 48px;
     background: var(--gradient-primary);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 12px;
     display: block;
@@ -296,6 +296,7 @@ body::before {
     font-weight: 600;
     background: var(--gradient-primary);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -492,8 +493,8 @@ input:checked+.slider .fa-moon {
 /* ============ STAT CARDS ============ */
 .stat-card {
     background: var(--bg-card);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
     padding: 24px;
@@ -569,8 +570,8 @@ input:checked+.slider .fa-moon {
 /* ============ DATA TABLE ============ */
 .data-card {
     background: var(--bg-card);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius);
     overflow: visible;
