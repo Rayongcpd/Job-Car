@@ -933,7 +933,7 @@ const VehicleLogs = {
         <td data-label="ทะเบียนรถ"><strong>${escapeHtml(item.CarLicense || '')}</strong></td>
         <td data-label="จุดประสงค์">${escapeHtml(item.Purpose || '-')}</td>
         <td data-label="ปลายทาง">${escapeHtml(item.Destination || '')}</td>
-        <td data-label="ผู้ขอใช้/กลุ่มงาน">${escapeHtml(item.Requestor || item.requestor || '-')}</td>
+        <td data-label="ผู้ขอใช้/กลุ่มงาน">${escapeHtml(item.Requestor || item.requestor || '-')} <br><small class="text-muted"><i class="fas fa-users"></i> ${escapeHtml(item.PassengerCount || 1)} คน</small></td>
         <td data-label="พนักงานขับ">${item.Driver === 'พนักงานขับรถลา' ? '<span style="color:#dc3545;font-weight:bold;">' + escapeHtml(item.Driver) + '</span>' : escapeHtml(item.Driver || '')}</td>
         <td data-label="สถานะ"><span class="badge-status badge-${(item.Status || '').toLowerCase()}">${escapeHtml(item.Status || '')}</span></td>
         <td data-label="จัดการ">
@@ -963,11 +963,12 @@ const VehicleLogs = {
         document.getElementById('vehPurpose').value = '';
         document.getElementById('vehDestination').value = '';
         document.getElementById('vehRequestor').value = '';
+        document.getElementById('vehPassengerCount').value = '1';
         document.getElementById('vehDepartureTime').value = '';
         document.getElementById('vehReturnTime').value = '';
 
         document.getElementById('vehDriver').value = '';
-        document.getElementById('vehStatus').value = 'Active';
+        document.getElementById('vehStatus').value = 'Approved';
         new bootstrap.Modal(document.getElementById('vehFormModal')).show();
     },
 
@@ -985,12 +986,13 @@ const VehicleLogs = {
         document.getElementById('vehDestination').value = item.Destination || '';
         // Handle potential case sensitivity or missing field
         document.getElementById('vehRequestor').value = item.Requestor || item.requestor || '';
+        document.getElementById('vehPassengerCount').value = item.PassengerCount || 1;
         // Format time for input[type="time"] - handles ISO strings from Google Sheets
         document.getElementById('vehDepartureTime').value = parseTimeForInput(item.DepartureTime);
         document.getElementById('vehReturnTime').value = parseTimeForInput(item.ReturnTime);
 
         document.getElementById('vehDriver').value = item.Driver || '';
-        document.getElementById('vehStatus').value = item.Status || 'Active';
+        document.getElementById('vehStatus').value = item.Status || 'Approved';
         new bootstrap.Modal(document.getElementById('vehFormModal')).show();
     },
 
@@ -1002,6 +1004,7 @@ const VehicleLogs = {
         const purpose = document.getElementById('vehPurpose').value.trim();
         const destination = document.getElementById('vehDestination').value.trim();
         const requestor = document.getElementById('vehRequestor').value.trim();
+        const passengerCount = document.getElementById('vehPassengerCount').value || 1;
         const departureTime = document.getElementById('vehDepartureTime').value;
         const returnTime = document.getElementById('vehReturnTime').value;
         const mileageStart = '';
@@ -1015,7 +1018,7 @@ const VehicleLogs = {
         }
 
         const action = id ? 'updateVehicleLog' : 'addVehicleLog';
-        const payload = { action, date, carLicense, purpose, destination, requestor, departureTime, returnTime, mileageStart, mileageEnd, driver, status };
+        const payload = { action, date, carLicense, purpose, destination, requestor, passengerCount, departureTime, returnTime, mileageStart, mileageEnd, driver, status };
         if (id) payload.id = id;
 
         const result = await API.post(payload);
@@ -1139,6 +1142,7 @@ const Calendar = {
                         purpose: item.Purpose || '',
                         destination: item.Destination || '',
                         requestor: item.Requestor || item.requestor || '',
+                        passengerCount: item.PassengerCount || 1,
                         departureTime: item.DepartureTime || '',
                         returnTime: item.ReturnTime || '',
                         postedBy: item.PostedBy || ''
@@ -1299,7 +1303,7 @@ const Calendar = {
                                 <h6 class="mb-0 text-primary">🚗 เลขทะเบียน : ${escapeHtml(ev.label)} <span class="${ev.driver === 'พนักงานขับรถลา' ? 'fw-bold' : 'fw-normal'}" style="font-size:0.85em;${ev.driver === 'พนักงานขับรถลา' ? 'color:#dc3545;' : 'color:var(--text-muted);'}">(พนักงานขับรถ : ${escapeHtml(ev.driver || '-')})</span></h6>
                                 <span class="badge-status badge-${(ev.status || '').toLowerCase()}">${escapeHtml(ev.status)}</span>
                             </div>
-                            <p class="mb-1 small" style="color: var(--color-veh-requestor, var(--text-secondary)) !important;"><i class="fas fa-user-tag me-1"></i> ผู้ขอใช้รถ : ${escapeHtml(ev.requestor || '-')}</p>
+                            <p class="mb-1 small" style="color: var(--color-veh-requestor, var(--text-secondary)) !important;"><i class="fas fa-user-tag me-1"></i> ผู้ขอใช้รถ : ${escapeHtml(ev.requestor || '-')} <span class="ms-2"><i class="fas fa-users"></i> ${escapeHtml(ev.passengerCount || 1)} คน</span></p>
                             <div class="d-flex gap-3 mb-1 small">
                                 <span style="color: var(--color-veh-departure, var(--text-secondary)) !important;"><i class="fas fa-clock me-1"></i> เวลาไป : ${formatTime(ev.departureTime)}</span>
                                 <span style="color: var(--color-veh-return, var(--text-secondary)) !important;"><i class="fas fa-clock me-1"></i> เวลากลับ : ${formatTime(ev.returnTime)}</span>
@@ -1697,7 +1701,7 @@ const Dashboard = {
         // Update Overview Cards
         let activeVeh = 0;
         vehicles.forEach(v => {
-            if (v.Status === 'Active') activeVeh++;
+            if (v.Status === 'Approved') activeVeh++;
         });
 
         animateCounter('dashTotalAnn', announcements.length);
@@ -1993,7 +1997,7 @@ const ExportUtils = {
         };
 
         updateText('pt-date', `${thaiDay} ${thaiMonth} ${thaiYear}`);
-        updateText('pt-requestor', item.Requestor || item.requestor);
+        updateText('pt-requestor', (item.Requestor || item.requestor) + ` (จำนวน ${item.PassengerCount || 1} คน)`);
         updateText('pt-purpose', item.Purpose);
         updateText('pt-destination', item.Destination);
         updateText('pt-car', item.CarLicense);

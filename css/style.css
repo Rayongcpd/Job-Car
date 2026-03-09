@@ -669,6 +669,16 @@ input:checked+.slider .fa-moon {
     font-weight: 500;
 }
 
+.badge-pending {
+    background: rgba(243, 156, 18, 0.15);
+    color: #f39c12;
+}
+
+.badge-approved {
+    background: rgba(46, 204, 113, 0.15);
+    color: var(--accent-success);
+}
+
 .badge-active {
     background: rgba(46, 204, 113, 0.15);
     color: var(--accent-success);

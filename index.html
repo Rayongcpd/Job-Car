@@ -161,7 +161,7 @@
             <div class="stat-card active">
               <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
               <div class="stat-value" id="dashActiveVeh">0</div>
-              <div class="stat-label">การใช้รถที่กำลังดำเนินการ</div>
+              <div class="stat-label">การใช้รถที่อนุมัติแล้ว</div>
             </div>
           </div>
         </div>
@@ -565,9 +565,16 @@
               <label class="form-label" style="color:var(--text-secondary)">จุดหมายปลายทาง *</label>
               <input type="text" class="form-control" id="vehDestination" placeholder="สถานที่ปลายทาง">
             </div>
-            <div class="col-md-12">
+            <div class="col-md-8">
               <label class="form-label" style="color:var(--text-secondary)">ผู้ขอใช้รถ / กลุ่มงาน *</label>
               <input type="text" class="form-control" id="vehRequestor" placeholder="ระบุชื่อผู้ขอ หรือ กลุ่มงาน">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" style="color:var(--text-secondary)">จำนวนผู้โดยสาร *</label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="vehPassengerCount" value="1" min="1">
+                <span class="input-group-text">คน</span>
+              </div>
             </div>
             <div class="col-md-6">
               <label class="form-label" style="color:var(--text-secondary)">เวลาไป</label>
@@ -593,7 +600,8 @@
             <div class="col-md-6">
               <label class="form-label" style="color:var(--text-secondary)">สถานะ</label>
               <select class="form-select" id="vehStatus">
-                <option value="Active">Active (กำลังใช้งาน)</option>
+                <option value="Pending">Pending (รอดำเนินการ)</option>
+                <option value="Approved">Approved (อนุมัติ)</option>
                 <option value="Completed">Completed (เสร็จสิ้น)</option>
                 <option value="Cancelled">Cancelled (ยกเลิก)</option>
               </select>
