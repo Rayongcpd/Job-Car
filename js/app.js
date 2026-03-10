@@ -825,6 +825,7 @@ const Announcements = {
         const detail = document.getElementById('annDetail').value.trim();
         let fileURL = document.getElementById('annFileURL').value;
         const fileInput = document.getElementById('annFile');
+        const sendNotification = document.getElementById('annSendNotification').checked;
 
         if (!title) {
             showToast('กรุณากรอกเรื่อง', 'error');
@@ -848,7 +849,7 @@ const Announcements = {
         }
 
         const action = id ? 'updateAnnouncement' : 'addAnnouncement';
-        const payload = { action, title, date, time, timeSuffix, location, coopParticipation, workGroup, detail, fileURL };
+        const payload = { action, title, date, time, timeSuffix, location, coopParticipation, workGroup, detail, fileURL, sendNotification };
         if (id) payload.id = id;
 
         const result = await API.post(payload);
@@ -1011,6 +1012,7 @@ const VehicleLogs = {
         const mileageEnd = '';
         const driver = document.getElementById('vehDriver').value.trim();
         const status = document.getElementById('vehStatus').value;
+        const sendNotification = document.getElementById('vehSendNotification').checked;
 
         if (!date || !destination || !requestor || !purpose) {
             showToast('กรุณากรอกข้อมูลที่จำเป็น (วันที่, จุดประสงค์, ปลายทาง, ผู้ขอ)', 'error');
@@ -1018,7 +1020,7 @@ const VehicleLogs = {
         }
 
         const action = id ? 'updateVehicleLog' : 'addVehicleLog';
-        const payload = { action, date, carLicense, purpose, destination, requestor, passengerCount, departureTime, returnTime, mileageStart, mileageEnd, driver, status };
+        const payload = { action, date, carLicense, purpose, destination, requestor, passengerCount, departureTime, returnTime, mileageStart, mileageEnd, driver, status, sendNotification };
         if (id) payload.id = id;
 
         const result = await API.post(payload);
