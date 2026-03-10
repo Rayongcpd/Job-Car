@@ -107,24 +107,28 @@
 
         <div class="data-card">
           <div class="calendar-header">
-            <button class="btn btn-outline-custom btn-sm" onclick="Calendar.prev()">
-              <i class="fas fa-chevron-left"></i>
-            </button>
-            <h4 id="calendarTitle">กุมภาพันธ์ 2569</h4>
-            <button class="btn btn-outline-custom btn-sm" onclick="Calendar.next()">
-              <i class="fas fa-chevron-right"></i>
-            </button>
-            <button class="btn btn-primary-custom btn-sm admin-only ms-md-2 " style="display: none;"
-              onclick="Announcements.showAdd()">
-              <i class="fas fa-plus me-1"></i>เพิ่มงานใหม่
-            </button>
-            <button class="btn btn-primary-custom btn-sm admin-only ms-1" style="display: none;"
-              onclick="VehicleLogs.showAdd()">
-              <i class="fas fa-car me-1"></i>เพิ่มการใช้รถ
-            </button>
-            <button class="btn btn-primary-custom btn-sm ms-auto" onclick="Calendar.goToday()">
-              <i class="fas fa-crosshairs me-1"></i>วันนี้
-            </button>
+            <div class="calendar-nav-group">
+              <button class="btn btn-outline-custom btn-sm" id="calendarPrevBtn" onclick="Calendar.prev()">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <h4 id="calendarTitle">กุมภาพันธ์ 2569</h4>
+              <button class="btn btn-outline-custom btn-sm" id="calendarNextBtn" onclick="Calendar.next()">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+            <div class="calendar-action-group">
+              <button class="btn btn-primary-custom btn-sm admin-only" id="calendarAddAnnBtn" style="display: none;"
+                onclick="Announcements.showAdd()">
+                <i class="fas fa-plus me-1"></i>เพิ่มงานใหม่
+              </button>
+              <button class="btn btn-primary-custom btn-sm admin-only" id="calendarAddVehBtn" style="display: none;"
+                onclick="VehicleLogs.showAdd()">
+                <i class="fas fa-car me-1"></i>เพิ่มการใช้รถ
+              </button>
+              <button class="btn btn-primary-custom btn-sm" id="calendarTodayBtn" onclick="Calendar.goToday()">
+                <i class="fas fa-crosshairs me-1"></i>วันนี้
+              </button>
+            </div>
           </div>
 
           <div class="calendar-legend">

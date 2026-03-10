@@ -181,3 +181,24 @@
         margin-right: 0;
     }
 }
+/* Action Buttons Row Override */
+@media (max-width: 768px) {
+    .calendar-action-group {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+        width: 100% !important;
+    }
+
+    .calendar-action-group .btn {
+        flex: 1 !important;
+        min-width: 0 !important;
+        font-size: 11px !important;
+        padding: 10px 2px !important;
+    }
+    
+    .calendar-action-group .btn i {
+        margin-right: 4px !important;
+    }
+}

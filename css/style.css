@@ -872,72 +872,26 @@ input:checked+.slider .fa-moon {
     cursor: pointer;
 }
 
-@media (max-width: 768px) {
-    .sidebar {
-        transform: translateX(-100%);
-    }
-
-    .sidebar.show {
-        transform: translateX(0);
-    }
-
-    .main-content {
-        margin-left: 0;
-        padding: 24px 16px;
-        padding-top: 64px;
-    }
-
-    .sidebar-toggle {
-        display: block;
-    }
-
-    .page-header h3 {
-        font-size: 20px;
-    }
-
-    .stat-card .stat-value {
-        font-size: 24px;
-    }
-
-    .calendar-day {
-        min-height: 40px;
-        padding: 4px;
-    }
-
-    .calendar-day .day-number {
-        font-size: 11px;
-    }
-
-    .calendar-event {
-        font-size: 9px;
-        padding: 1px 3px;
-    }
-
-    .calendar-header {
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 8px 16px;
-    }
-
-    .calendar-header h4 {
-        font-size: 15px;
-        order: -1;
-        flex-basis: 100%;
-        text-align: center;
-    }
-}
 
 /* ============ CALENDAR ============ */
 .calendar-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
     padding: 20px 24px;
     border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
 }
 
-.calendar-header h4 {
+.calendar-nav-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     flex: 1;
+}
+
+.calendar-nav-group h4 {
     text-align: center;
     font-size: 18px;
     font-weight: 600;
@@ -945,6 +899,13 @@ input:checked+.slider .fa-moon {
     background: var(--gradient-primary);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    flex: 1;
+}
+
+.calendar-action-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .calendar-legend {
@@ -1278,4 +1239,46 @@ input:checked+.slider .fa-moon {
     background: var(--bg-secondary);
     border: 2px dashed var(--text-muted);
     font-size: 13px;
+}
+/* ============ MOBILE OVERRIDES (Corrected Location) ============ */
+@media (max-width: 768px) {
+    .calendar-header {
+        padding: 12px 16px;
+        gap: 12px;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .calendar-nav-group {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .calendar-nav-group h4 {
+        font-size: 16px;
+        margin: 0;
+        flex: 0 1 auto;
+    }
+
+    .calendar-action-group {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 5px;
+    }
+
+    .calendar-action-group .btn {
+        flex: 1;
+        padding: 8px 4px !important;
+        font-size: 11px !important;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 }
