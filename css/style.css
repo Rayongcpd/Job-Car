@@ -61,6 +61,13 @@
     box-sizing: border-box;
 }
 
+/* ============ AUTH/ROLE VISIBILITY ============ */
+.auth-only,
+.admin-only,
+.superadmin-only {
+    display: none !important;
+}
+
 body {
     font-family: 'Prompt', sans-serif;
     background: var(--bg-primary);

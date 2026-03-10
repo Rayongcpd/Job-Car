@@ -1388,17 +1388,25 @@ function showApp() {
 
         // Show Admin Only Elements
         document.querySelectorAll('.admin-only').forEach(el => {
-            el.style.display = AppState.isAdmin() ? 'inline-block' : 'none';
+            if (AppState.isAdmin()) {
+                el.style.setProperty('display', 'inline-block', 'important');
+            } else {
+                el.style.setProperty('display', 'none', 'important');
+            }
         });
 
         // Show SuperAdmin Only Elements
         document.querySelectorAll('.superadmin-only').forEach(el => {
-            el.style.display = AppState.isSuperAdmin() ? 'block' : 'none';
+            if (AppState.isSuperAdmin()) {
+                el.style.setProperty('display', 'block', 'important');
+            } else {
+                el.style.setProperty('display', 'none', 'important');
+            }
         });
 
         // Show Auth Only Elements
         document.querySelectorAll('.auth-only').forEach(el => {
-            el.style.display = 'block';
+            el.style.setProperty('display', 'block', 'important');
         });
 
         // Show Settings Menu if Superadmin
@@ -1423,17 +1431,17 @@ function showApp() {
 
         // Hide Admin Only Elements
         document.querySelectorAll('.admin-only').forEach(el => {
-            el.style.display = 'none';
+            el.style.setProperty('display', 'none', 'important');
         });
 
         // Hide SuperAdmin Only Elements
         document.querySelectorAll('.superadmin-only').forEach(el => {
-            el.style.display = 'none';
+            el.style.setProperty('display', 'none', 'important');
         });
 
         // Hide Auth Only Elements
         document.querySelectorAll('.auth-only').forEach(el => {
-            el.style.display = 'none';
+            el.style.setProperty('display', 'none', 'important');
         });
 
         // Hide Settings Menu
