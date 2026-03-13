@@ -858,7 +858,8 @@ const Announcements = {
             showToast(result.message, 'success');
             bootstrap.Modal.getInstance(document.getElementById('annFormModal')).hide();
             this.load();
-            Calendar.load(); // Refresh calendar
+            Calendar.load(); 
+            Dashboard.load();
         } else {
             showToast(result.error, 'error');
         }
@@ -887,6 +888,7 @@ const Announcements = {
         if (result.success) {
             showToast(result.message, 'success');
             this.load();
+            Calendar.load();
             Dashboard.load();
         } else {
             showToast(result.error, 'error');
@@ -1029,6 +1031,7 @@ const VehicleLogs = {
             showToast(result.message, 'success');
             bootstrap.Modal.getInstance(document.getElementById('vehFormModal')).hide();
             this.load();
+            Calendar.load();
             Dashboard.load();
         } else {
             showToast(result.error, 'error');
@@ -1059,6 +1062,7 @@ const VehicleLogs = {
             showToast(result.message, 'success');
             this.load();
             Calendar.load();
+            Dashboard.load();
         } else {
             showToast(result.error, 'error');
         }
