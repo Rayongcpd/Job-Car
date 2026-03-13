@@ -1429,7 +1429,10 @@ function showApp() {
         // Show Admin Only Elements
         document.querySelectorAll('.admin-only').forEach(el => {
             if (AppState.isAdmin()) {
-                el.style.setProperty('display', 'inline-block', 'important');
+                // Use 'flex' for elements that need flex layout (like legend-item), otherwise 'inline-block'
+                const tag = el.tagName.toLowerCase();
+                const isInline = (tag === 'span' || tag === 'a' || tag === 'button');
+                el.style.setProperty('display', isInline ? 'inline-flex' : 'flex', 'important');
             } else {
                 el.style.setProperty('display', 'none', 'important');
             }
