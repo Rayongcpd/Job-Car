@@ -905,6 +905,7 @@ input:checked+.slider .fa-moon {
     margin: 0;
     background: var(--gradient-primary);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     flex: 1;
 }
@@ -943,6 +944,10 @@ input:checked+.slider .fa-moon {
 
 .legend-dot.vehicle {
     background: var(--color-vehicle, var(--accent-secondary));
+}
+
+.legend-dot.prebook {
+    background: var(--accent-warning);
 }
 
 .calendar-grid {
