@@ -1134,21 +1134,46 @@ const Calendar = {
         if (vehResult.success && vehResult.data) {
             vehResult.data.forEach(item => {
                 if (item.Date) {
-                    this.events.push({
-                        type: 'vehicle',
-                        date: this.normalizeDate(item.Date),
-                        label: item.CarLicense || 'รถ',
-                        id: item.ID,
-                        driver: item.Driver || '',
-                        status: item.Status || '',
-                        purpose: item.Purpose || '',
-                        destination: item.Destination || '',
-                        requestor: item.Requestor || item.requestor || '',
-                        passengerCount: item.PassengerCount || 1,
-                        departureTime: item.DepartureTime || '',
-                        returnTime: item.ReturnTime || '',
-                        postedBy: item.PostedBy || ''
-                    });
+                    const status = item.Status || '';
+                    const isAdmin = AppState.isAdmin();
+
+                    // If Pending, it's a Prebook. Only show to admins.
+                    if (status === 'Pending') {
+                        if (isAdmin) {
+                            this.events.push({
+                                type: 'prebook',
+                                date: this.normalizeDate(item.Date),
+                                label: item.CarLicense || 'รถ',
+                                id: item.ID,
+                                driver: item.Driver || '',
+                                status: 'Pending',
+                                purpose: item.Purpose || '',
+                                destination: item.Destination || '',
+                                requestor: item.Requestor || item.requestor || '',
+                                passengerCount: item.PassengerCount || 1,
+                                departureTime: item.DepartureTime || '',
+                                returnTime: item.ReturnTime || '',
+                                postedBy: item.PostedBy || ''
+                            });
+                        }
+                    } else if (status === 'Approved' || status === 'Completed') {
+                        // General users only see Approved/Completed
+                        this.events.push({
+                            type: 'vehicle',
+                            date: this.normalizeDate(item.Date),
+                            label: item.CarLicense || 'รถ',
+                            id: item.ID,
+                            driver: item.Driver || '',
+                            status: status,
+                            purpose: item.Purpose || '',
+                            destination: item.Destination || '',
+                            requestor: item.Requestor || item.requestor || '',
+                            passengerCount: item.PassengerCount || 1,
+                            departureTime: item.DepartureTime || '',
+                            returnTime: item.ReturnTime || '',
+                            postedBy: item.PostedBy || ''
+                        });
+                    }
                 }
             });
         }
@@ -1200,12 +1225,19 @@ const Calendar = {
 
             const newsEvents = dayEvents.filter(e => e.type === 'announcement');
             const vehicleEvents = dayEvents.filter(e => e.type === 'vehicle');
+            const prebookEvents = dayEvents.filter(e => e.type === 'prebook');
 
             let eventsHtml = '';
 
             if (newsEvents.length > 0) {
                 eventsHtml += `<div class="calendar-event announcement" onclick="Calendar.showGroup('${dateStr}', 'announcement')" title="ดูการปฏิบัติงาน">
                     <span class="event-icon">📋</span> <span class="event-label">การปฏิบัติงาน</span> <span class="event-count">(${newsEvents.length})</span>
+                </div>`;
+            }
+
+            if (prebookEvents.length > 0) {
+                eventsHtml += `<div class="calendar-event prebook" onclick="Calendar.showGroup('${dateStr}', 'prebook')" title="ดู Prebook (รอนุมัติ)">
+                    <span class="event-icon">⚠️</span> <span class="event-label">Prebook (รอนุมัติ)</span> <span class="event-count">(${prebookEvents.length})</span>
                 </div>`;
             }
 
@@ -1260,7 +1292,9 @@ const Calendar = {
         // Prevent bubbling if called from onclick directly (though in HTML we passed string values)
         if (event) event.stopPropagation();
 
-        const typeName = type === 'announcement' ? 'การปฏิบัติงาน' : 'บันทึกการใช้รถ';
+        let typeName = 'การปฏิบัติงาน';
+        if (type === 'vehicle') typeName = 'บันทึกการใช้รถ';
+        if (type === 'prebook') typeName = 'Prebook (รอนุมัติ)';
 
         // Format dateStr (YYYY-MM-DD) to Thai date
         const [yyyy, mm, dd] = dateStr.split('-');
@@ -1303,7 +1337,7 @@ const Calendar = {
                         <div class="list-group-item bg-transparent border-bottom">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h6 class="mb-0 text-primary">🚗 เลขทะเบียน : ${escapeHtml(ev.label)} <span class="${ev.driver === 'พนักงานขับรถลา' ? 'fw-bold' : 'fw-normal'}" style="font-size:0.85em;${ev.driver === 'พนักงานขับรถลา' ? 'color:#dc3545;' : 'color:var(--text-muted);'}">(พนักงานขับรถ : ${escapeHtml(ev.driver || '-')})</span></h6>
-                                <span class="badge-status badge-${(ev.status || '').toLowerCase()}">${escapeHtml(ev.status)}</span>
+                                <span class="badge-status badge-${(ev.status || '').toLowerCase() === 'pending' ? 'prebook' : (ev.status || '').toLowerCase()}">${ev.status === 'Pending' ? 'Prebook (รอดำเนินการ)' : escapeHtml(ev.status)}</span>
                             </div>
                             <p class="mb-1 small" style="color: var(--color-veh-requestor, var(--text-secondary)) !important;"><i class="fas fa-user-tag me-1"></i> ผู้ขอใช้รถ : ${escapeHtml(ev.requestor || '-')} <span class="ms-2"><i class="fas fa-users"></i> ${escapeHtml(ev.passengerCount || 1)} คน</span></p>
                             <div class="d-flex gap-3 mb-1 small">

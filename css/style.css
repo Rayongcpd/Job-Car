@@ -1058,6 +1058,17 @@ input:checked+.slider .fa-moon {
     border-left: 3px solid rgba(255, 255, 255, 0.5);
 }
 
+.calendar-event.prebook {
+    background: var(--accent-warning);
+    border-left: 3px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Status Badge for Prebook */
+.badge-prebook {
+    background: rgba(243, 156, 18, 0.15);
+    color: #f39c12;
+}
+
 /* ============ SECTION PAGES ============ */
 .page-section {
     display: none;
