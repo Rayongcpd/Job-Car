@@ -1052,6 +1052,53 @@ const VehicleLogs = {
         this.applyFilter();
     },
 
+    /** Quick update status directly from calendar detail modal (admin only) */
+    async quickUpdateStatus(evDataB64, newStatus) {
+        let ev;
+        try {
+            ev = JSON.parse(decodeURIComponent(atob(evDataB64)));
+        } catch (e) {
+            showToast('ข้อมูลไม่ถูกต้อง', 'error');
+            return;
+        }
+
+        // Close current detail modal
+        const detailModalEl = document.getElementById('detailModal');
+        const detailModalInstance = bootstrap.Modal.getInstance(detailModalEl);
+        if (detailModalInstance) detailModalInstance.hide();
+
+        // Build payload from calendar event data (no need for AppState.vehicleLogs)
+        const payload = {
+            action: 'updateVehicleLog',
+            id: ev.id,
+            date: Calendar.normalizeDate(ev.date),
+            carLicense: ev.label || '',
+            purpose: ev.purpose || '',
+            destination: ev.destination || '',
+            requestor: ev.requestor || '',
+            passengerCount: ev.passengerCount || 1,
+            departureTime: parseTimeForInput(ev.departureTime),
+            returnTime: parseTimeForInput(ev.returnTime),
+            mileageStart: '',
+            mileageEnd: '',
+            driver: ev.driver || '',
+            status: newStatus,
+            sendNotification: false
+        };
+
+        showToast('กำลังเปลี่ยนสถานะ...', 'info');
+        const result = await API.post(payload);
+
+        if (result.success) {
+            showToast(`เปลี่ยนสถานะเป็น "${newStatus}" สำเร็จ ✅`, 'success');
+            this.load();
+            Calendar.load();
+            Dashboard.load();
+        } else {
+            showToast(result.error || 'เกิดข้อผิดพลาด', 'error');
+        }
+    },
+
     /** Confirm and delete vehicle log */
     async confirmDelete(id) {
         if (!confirm('ต้องการลบบันทึกนี้หรือไม่?')) return;
@@ -1337,11 +1384,51 @@ const Calendar = {
                         </div>
                     `;
                 } else {
+                    // Build quick-status buttons for admin
+                    const isAdminView = AppState.isAdmin();
+                    const currentStatus = ev.status || '';
+                    const statusBadgeClass = currentStatus.toLowerCase() === 'pending' ? 'prebook' : currentStatus.toLowerCase();
+                    const statusLabel = currentStatus === 'Pending' ? 'Prebook (รอดำเนินการ)' : escapeHtml(currentStatus);
+
+                    // Status options
+                    const allStatuses = [
+                        { value: 'Pending',   label: 'Pending (รอดำเนินการ)',  cls: 'btn-warning' },
+                        { value: 'Approved',  label: 'Approved (อนุมัติ)',     cls: 'btn-success' },
+                        { value: 'Completed', label: 'Completed (เสร็จสิ้น)', cls: 'btn-info' },
+                        { value: 'Cancelled', label: 'Cancelled (ยกเลิก)',     cls: 'btn-danger' },
+                    ];
+
+                    let quickStatusHtml = '';
+                    if (isAdminView) {
+                        // Encode ev to base64 to safely pass in onclick attribute
+                        const evB64 = btoa(encodeURIComponent(JSON.stringify({
+                            id: ev.id,
+                            date: ev.date,
+                            label: ev.label,
+                            purpose: ev.purpose,
+                            destination: ev.destination,
+                            requestor: ev.requestor,
+                            passengerCount: ev.passengerCount,
+                            departureTime: ev.departureTime,
+                            returnTime: ev.returnTime,
+                            driver: ev.driver
+                        })));
+                        const btns = allStatuses
+                            .filter(s => s.value !== currentStatus)
+                            .map(s => `<button class="btn ${s.cls} btn-sm quick-status-btn" style="font-size:0.7em;padding:2px 8px;" onclick="VehicleLogs.quickUpdateStatus('${evB64}', '${s.value}')">${s.label}</button>`)
+                            .join('');
+                        quickStatusHtml = `
+                            <div class="mt-2 d-flex align-items-center gap-1 flex-wrap">
+                                <small class="text-muted me-1" style="font-size:0.72em;"><i class="fas fa-exchange-alt me-1"></i>เปลี่ยนสถานะ:</small>
+                                ${btns}
+                            </div>`;
+                    }
+
                     html += `
                         <div class="list-group-item bg-transparent border-bottom">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h6 class="mb-0 text-primary">🚗 เลขทะเบียน : ${escapeHtml(ev.label)} <span class="${ev.driver === 'พนักงานขับรถลา' ? 'fw-bold' : 'fw-normal'}" style="font-size:0.85em;${ev.driver === 'พนักงานขับรถลา' ? 'color:#dc3545;' : 'color:var(--text-muted);'}">(พนักงานขับรถ : ${escapeHtml(ev.driver || '-')})</span></h6>
-                                <span class="badge-status badge-${(ev.status || '').toLowerCase() === 'pending' ? 'prebook' : (ev.status || '').toLowerCase()}">${ev.status === 'Pending' ? 'Prebook (รอดำเนินการ)' : escapeHtml(ev.status)}</span>
+                                <span class="badge-status badge-${statusBadgeClass}">${statusLabel}</span>
                             </div>
                             <p class="mb-1 small" style="color: var(--color-veh-requestor, var(--text-secondary)) !important;"><i class="fas fa-user-tag me-1"></i> ผู้ขอใช้รถ : ${escapeHtml(ev.requestor || '-')} <span class="ms-2"><i class="fas fa-users"></i> ${escapeHtml(ev.passengerCount || 1)} คน</span></p>
                             <div class="d-flex gap-3 mb-1 small">
@@ -1350,6 +1437,7 @@ const Calendar = {
                             </div>
                             <p class="mb-1 small" style="color: var(--color-veh-destination, var(--text-secondary)) !important;"><i class="fas fa-map-marker-alt me-1"></i> สถานที่ : ${escapeHtml(ev.destination || '-')}</p>
                             <p class="mb-0 small" style="color: var(--color-veh-purpose, var(--text-secondary)) !important;"><i class="fas fa-bullseye me-1"></i> เพื่อ : ${escapeHtml(ev.purpose || '-')}</p>
+                            ${quickStatusHtml}
                             <hr style="border-color: var(--border-color); margin: 8px 0;">
                             <small class="text-muted d-block text-end fst-italic" style="font-size:0.7em;"><i class="fas fa-user me-1"></i> ผู้สร้างโพสนี้: ${escapeHtml(ev.postedBy || '-')}</small>
                         </div>
