@@ -70,9 +70,15 @@ const AppState = {
         }
 
         // Handle Return to Calendar Group Modal after closing vehicle form
-        document.getElementById('vehFormModal').addEventListener('hidden.bs.modal', () => {
+        document.getElementById('vehFormModal').addEventListener('hidden.bs.modal', async () => {
             if (VehicleLogs.editFromCalendar) {
                 VehicleLogs.editFromCalendar = false;
+                
+                // If there's an active load, wait for it to finish to display fresh data
+                if (Calendar._lastLoadPromise) {
+                    await Calendar._lastLoadPromise;
+                }
+
                 if (Calendar.lastOpenedGroup) {
                     Calendar.showGroup(Calendar.lastOpenedGroup.dateStr, Calendar.lastOpenedGroup.type);
                 }
@@ -1048,10 +1054,11 @@ const VehicleLogs = {
 
         if (result.success) {
             showToast(result.message, 'success');
+            const loadPromise = Calendar.load(); // Start loading immediately
             bootstrap.Modal.getInstance(document.getElementById('vehFormModal')).hide();
             this.load();
-            await Calendar.load();
             Dashboard.load();
+            await loadPromise; // Ensure it finishes if called from elsewhere
         } else {
             showToast(result.error, 'error');
         }
@@ -1144,6 +1151,7 @@ const Calendar = {
     currentDate: new Date(),
     events: [],
     lastOpenedGroup: null, // { dateStr, type }
+    _lastLoadPromise: null,
 
     THAI_MONTHS: [
         'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
@@ -1174,52 +1182,71 @@ const Calendar = {
         const grid = document.getElementById('calendarGrid');
         grid.innerHTML = '<div style="grid-column: span 7;"><div class="loading-spinner"><div class="spinner-border"></div></div></div>';
 
-        // Fetch both data sources in parallel
-        const [annResult, vehResult] = await Promise.all([
-            API.get({ action: 'getAnnouncements' }),
-            API.get({ action: 'getVehicleLogs' })
-        ]);
+        // Fetch both data sources in parallel and store promise
+        this._lastLoadPromise = (async () => {
+            const [annResult, vehResult] = await Promise.all([
+                API.get({ action: 'getAnnouncements' }),
+                API.get({ action: 'getVehicleLogs' })
+            ]);
 
-        this.events = [];
+            this.events = [];
 
-        if (annResult.success && annResult.data) {
-            AppState.announcements = annResult.data; // Sync to AppState
-            annResult.data.forEach(item => {
-                if (item.Date) {
-                    this.events.push({
-                        type: 'announcement',
-                        date: this.normalizeDate(item.Date),
-                        label: item.Title || 'งาน',
-                        id: item.ID,
-                        detail: item.Detail || '',
-                        postedBy: item.PostedBy || '',
-                        workGroup: item.WorkGroup || '',
-                        time: item.Time || '',
-                        timeSuffix: item.TimeSuffix || '',
-                        location: item.Location || '',
-                        coopParticipation: item.CoopParticipation || ''
-                    });
-                }
-            });
-        }
+            if (annResult.success && annResult.data) {
+                AppState.announcements = annResult.data; // Sync to AppState
+                annResult.data.forEach(item => {
+                    if (item.Date) {
+                        this.events.push({
+                            type: 'announcement',
+                            date: this.normalizeDate(item.Date),
+                            label: item.Title || 'งาน',
+                            id: item.ID,
+                            detail: item.Detail || '',
+                            postedBy: item.PostedBy || '',
+                            workGroup: item.WorkGroup || '',
+                            time: item.Time || '',
+                            timeSuffix: item.TimeSuffix || '',
+                            location: item.Location || '',
+                            coopParticipation: item.CoopParticipation || ''
+                        });
+                    }
+                });
+            }
 
-        if (vehResult.success && vehResult.data) {
-            AppState.vehicleLogs = vehResult.data; // Sync to AppState
-            vehResult.data.forEach(item => {
-                if (item.Date) {
-                    const status = item.Status || '';
-                    const isAdmin = AppState.isAdmin();
+            if (vehResult.success && vehResult.data) {
+                AppState.vehicleLogs = vehResult.data; // Sync to AppState
+                vehResult.data.forEach(item => {
+                    if (item.Date) {
+                        const status = item.Status || '';
+                        const isAdmin = AppState.isAdmin();
 
-                    // If Pending, it's a Prebook. Only show to admins.
-                    if (status === 'Pending') {
-                        if (isAdmin) {
+                        // If Pending, it's a Prebook. Only show to admins.
+                        if (status === 'Pending') {
+                            if (isAdmin) {
+                                this.events.push({
+                                    type: 'prebook',
+                                    date: this.normalizeDate(item.Date),
+                                    label: item.CarLicense || 'รถ',
+                                    id: item.ID,
+                                    driver: item.Driver || '',
+                                    status: 'Pending',
+                                    purpose: item.Purpose || '',
+                                    destination: item.Destination || '',
+                                    requestor: item.Requestor || item.requestor || '',
+                                    passengerCount: item.PassengerCount || 1,
+                                    departureTime: item.DepartureTime || '',
+                                    returnTime: item.ReturnTime || '',
+                                    postedBy: item.PostedBy || ''
+                                });
+                            }
+                        } else if (status === 'Approved' || status === 'Completed') {
+                            // General users only see Approved/Completed
                             this.events.push({
-                                type: 'prebook',
+                                type: 'vehicle',
                                 date: this.normalizeDate(item.Date),
                                 label: item.CarLicense || 'รถ',
                                 id: item.ID,
                                 driver: item.Driver || '',
-                                status: 'Pending',
+                                status: status,
                                 purpose: item.Purpose || '',
                                 destination: item.Destination || '',
                                 requestor: item.Requestor || item.requestor || '',
@@ -1229,28 +1256,13 @@ const Calendar = {
                                 postedBy: item.PostedBy || ''
                             });
                         }
-                    } else if (status === 'Approved' || status === 'Completed') {
-                        // General users only see Approved/Completed
-                        this.events.push({
-                            type: 'vehicle',
-                            date: this.normalizeDate(item.Date),
-                            label: item.CarLicense || 'รถ',
-                            id: item.ID,
-                            driver: item.Driver || '',
-                            status: status,
-                            purpose: item.Purpose || '',
-                            destination: item.Destination || '',
-                            requestor: item.Requestor || item.requestor || '',
-                            passengerCount: item.PassengerCount || 1,
-                            departureTime: item.DepartureTime || '',
-                            returnTime: item.ReturnTime || '',
-                            postedBy: item.PostedBy || ''
-                        });
                     }
-                }
-            });
-        }
+                });
+            }
+            return true;
+        })();
 
+        await this._lastLoadPromise;
         this.render();
     },
 
