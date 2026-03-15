@@ -69,6 +69,16 @@ const AppState = {
             }
         }
 
+        // Handle Return to Calendar Group Modal after closing vehicle form
+        document.getElementById('vehFormModal').addEventListener('hidden.bs.modal', () => {
+            if (VehicleLogs.editFromCalendar) {
+                VehicleLogs.editFromCalendar = false;
+                if (Calendar.lastOpenedGroup) {
+                    Calendar.showGroup(Calendar.lastOpenedGroup.dateStr, Calendar.lastOpenedGroup.type);
+                }
+            }
+        });
+
         showApp();
     }
 };
@@ -900,6 +910,8 @@ const Announcements = {
 // 🚗 VEHICLE LOGS MODULE
 // ============================================================
 const VehicleLogs = {
+    editFromCalendar: false,
+
     /** Fetch and render all vehicle logs */
     async load() {
         const container = document.getElementById('vehicleTableBody');
@@ -976,9 +988,11 @@ const VehicleLogs = {
     },
 
     /** Show edit form modal */
-    showEdit(id) {
+    showEdit(id, fromCalendar = false) {
         const item = AppState.vehicleLogs.find(v => v.ID === id);
         if (!item) return;
+
+        this.editFromCalendar = fromCalendar;
 
         // Close detail modal if open
         const detailModalEl = document.getElementById('detailModal');
@@ -1036,7 +1050,7 @@ const VehicleLogs = {
             showToast(result.message, 'success');
             bootstrap.Modal.getInstance(document.getElementById('vehFormModal')).hide();
             this.load();
-            Calendar.load();
+            await Calendar.load();
             Dashboard.load();
         } else {
             showToast(result.error, 'error');
@@ -1129,6 +1143,7 @@ const VehicleLogs = {
 const Calendar = {
     currentDate: new Date(),
     events: [],
+    lastOpenedGroup: null, // { dateStr, type }
 
     THAI_MONTHS: [
         'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
@@ -1350,6 +1365,8 @@ const Calendar = {
         // Prevent bubbling if called from onclick directly (though in HTML we passed string values)
         if (event) event.stopPropagation();
 
+        this.lastOpenedGroup = { dateStr, type };
+
         let typeName = 'การปฏิบัติงาน';
         if (type === 'vehicle') typeName = 'บันทึกการใช้รถ';
         if (type === 'prebook') typeName = 'Prebook (รอนุมัติ)';
@@ -1435,7 +1452,7 @@ const Calendar = {
                                         ${items}
                                     </ul>
                                 </div>
-                                <button class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1" onclick="VehicleLogs.showEdit('${ev.id}')" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
+                                <button class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1" onclick="VehicleLogs.showEdit('${ev.id}', true)" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
                                     <i class="fas fa-edit" style="font-size: 0.9em;"></i> แก้ไข
                                 </button>
                             </div>`;
