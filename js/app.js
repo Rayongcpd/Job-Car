@@ -1413,14 +1413,21 @@ const Calendar = {
                             returnTime: ev.returnTime,
                             driver: ev.driver
                         })));
-                        const btns = allStatuses
+                        const items = allStatuses
                             .filter(s => s.value !== currentStatus)
-                            .map(s => `<button class="btn ${s.cls} btn-sm quick-status-btn" style="font-size:0.7em;padding:2px 8px;" onclick="VehicleLogs.quickUpdateStatus('${evB64}', '${s.value}')">${s.label}</button>`)
+                            .map(s => `<li><button class="dropdown-item d-flex align-items-center gap-2 py-2" onclick="VehicleLogs.quickUpdateStatus('${evB64}', '${s.value}')"><span class="status-indicator-dot bg-${s.value.toLowerCase()}"></span>${s.label}</button></li>`)
                             .join('');
                         quickStatusHtml = `
-                            <div class="mt-2 d-flex align-items-center gap-1 flex-wrap">
-                                <small class="text-muted me-1" style="font-size:0.72em;"><i class="fas fa-exchange-alt me-1"></i>เปลี่ยนสถานะ:</small>
-                                ${btns}
+                            <div class="mt-2 d-flex align-items-center gap-2">
+                                <small class="text-muted" style="font-size:0.72em;"><i class="fas fa-exchange-alt me-1"></i>เปลี่ยนสถานะ:</small>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-custom btn-sm dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
+                                        เลือกเพื่อเปลี่ยนสถานะ
+                                    </button>
+                                    <ul class="dropdown-menu shadow-sm border-0 mt-1" style="font-size:0.85em; border-radius: 12px; overflow: hidden;">
+                                        ${items}
+                                    </ul>
+                                </div>
                             </div>`;
                     }
 

@@ -668,7 +668,7 @@ input:checked+.slider .fa-moon {
     border-bottom: none !important;
 }
 
-/* ============ BADGES ============ */
+/* ============ BADGES & STATUS ============ */
 .badge-status {
     padding: 5px 12px;
     border-radius: 20px;
@@ -699,6 +699,39 @@ input:checked+.slider .fa-moon {
 .badge-cancelled {
     background: rgba(231, 76, 60, 0.15);
     color: var(--accent-danger);
+}
+
+/* Status Indicator Dot */
+.status-indicator-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.bg-pending { background-color: var(--accent-warning) !important; }
+.bg-approved { background-color: var(--accent-success) !important; }
+.bg-completed { background-color: var(--accent-info) !important; }
+.bg-cancelled { background-color: var(--accent-danger) !important; }
+
+.dropdown-menu {
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.dropdown-item {
+    color: var(--text-primary) !important;
+    transition: var(--transition);
+}
+
+.dropdown-item:hover {
+    background-color: var(--bg-hover) !important;
+    color: var(--accent-primary) !important;
+}
+
+.dropdown-toggle::after {
+    vertical-align: 0.15em;
 }
 
 /* ============ MODALS ============ */
