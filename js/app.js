@@ -980,6 +980,11 @@ const VehicleLogs = {
         const item = AppState.vehicleLogs.find(v => v.ID === id);
         if (!item) return;
 
+        // Close detail modal if open
+        const detailModalEl = document.getElementById('detailModal');
+        const detailModalInstance = bootstrap.Modal.getInstance(detailModalEl);
+        if (detailModalInstance) detailModalInstance.hide();
+
         document.getElementById('vehFormTitle').textContent = 'แก้ไขบันทึกการใช้รถ';
         document.getElementById('vehFormId').value = item.ID;
         // Format date to YYYY-MM-DD for input[type="date"]
@@ -1163,6 +1168,7 @@ const Calendar = {
         this.events = [];
 
         if (annResult.success && annResult.data) {
+            AppState.announcements = annResult.data; // Sync to AppState
             annResult.data.forEach(item => {
                 if (item.Date) {
                     this.events.push({
@@ -1183,6 +1189,7 @@ const Calendar = {
         }
 
         if (vehResult.success && vehResult.data) {
+            AppState.vehicleLogs = vehResult.data; // Sync to AppState
             vehResult.data.forEach(item => {
                 if (item.Date) {
                     const status = item.Status || '';
@@ -1428,6 +1435,9 @@ const Calendar = {
                                         ${items}
                                     </ul>
                                 </div>
+                                <button class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1" onclick="VehicleLogs.showEdit('${ev.id}')" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
+                                    <i class="fas fa-edit" style="font-size: 0.9em;"></i> แก้ไข
+                                </button>
                             </div>`;
                     }
 
