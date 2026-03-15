@@ -1460,23 +1460,19 @@ const Calendar = {
                             .join('');
 
                         quickStatusHtml = `
-                            <div class="mt-3 p-3 bg-light rounded-3 border">
-                                <div class="d-flex flex-wrap align-items-center gap-3">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <small class="text-muted" style="font-size:0.72em;"><i class="fas fa-exchange-alt me-1"></i>เปลี่ยนสถานะ:</small>
-                                        <div class="dropdown">
-                                            <button class="btn btn-outline-custom btn-sm dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
-                                                เลือกเพื่อเปลี่ยนสถานะ
-                                            </button>
-                                            <ul class="dropdown-menu shadow-sm border-0 mt-1" style="font-size:0.85em; border-radius: 12px; overflow: hidden;">
-                                                ${items}
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <button class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1" onclick="VehicleLogs.showEdit('${ev.id}', true)" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
-                                        <i class="fas fa-edit" style="font-size: 0.9em;"></i> แก้ไข
+                            <div class="mt-2 d-flex flex-wrap align-items-center gap-2">
+                                <small class="text-muted" style="font-size:0.72em;"><i class="fas fa-exchange-alt me-1"></i>เปลี่ยนสถานะ:</small>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-custom btn-sm dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
+                                        เลือกเพื่อเปลี่ยนสถานะ
                                     </button>
+                                    <ul class="dropdown-menu shadow-sm border-0 mt-1" style="font-size:0.85em; border-radius: 12px; overflow: hidden;">
+                                        ${items}
+                                    </ul>
                                 </div>
+                                <button class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1" onclick="VehicleLogs.showEdit('${ev.id}', true)" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
+                                    <i class="fas fa-edit" style="font-size: 0.9em;"></i> แก้ไข
+                                </button>
                             </div>`;
                     }
 
