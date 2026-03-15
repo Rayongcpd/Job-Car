@@ -80,7 +80,10 @@ const AppState = {
                 }
 
                 if (Calendar.lastOpenedGroup) {
-                    Calendar.showGroup(Calendar.lastOpenedGroup.dateStr, Calendar.lastOpenedGroup.type);
+                    // Small delay to ensure the DOM and Bootstrap state are ready for a new modal
+                    setTimeout(() => {
+                        Calendar.showGroup(Calendar.lastOpenedGroup.dateStr, Calendar.lastOpenedGroup.type);
+                    }, 100);
                 }
             }
         });
@@ -1437,7 +1440,7 @@ const Calendar = {
                     let quickStatusHtml = '';
                     if (isAdminView) {
                         // Encode ev to base64 to safely pass in onclick attribute
-                        const evB64 = btoa(encodeURIComponent(JSON.stringify({
+                        const evData = {
                             id: ev.id,
                             date: ev.date,
                             label: ev.label,
@@ -1448,25 +1451,32 @@ const Calendar = {
                             departureTime: ev.departureTime,
                             returnTime: ev.returnTime,
                             driver: ev.driver
-                        })));
+                        };
+                        const evB64 = btoa(encodeURIComponent(JSON.stringify(evData)));
+                        
                         const items = allStatuses
                             .filter(s => s.value !== currentStatus)
                             .map(s => `<li><button class="dropdown-item d-flex align-items-center gap-2 py-2" onclick="VehicleLogs.quickUpdateStatus('${evB64}', '${s.value}')"><span class="status-indicator-dot bg-${s.value.toLowerCase()}"></span>${s.label}</button></li>`)
                             .join('');
+
                         quickStatusHtml = `
-                            <div class="mt-2 d-flex align-items-center gap-2">
-                                <small class="text-muted" style="font-size:0.72em;"><i class="fas fa-exchange-alt me-1"></i>เปลี่ยนสถานะ:</small>
-                                <div class="dropdown">
-                                    <button class="btn btn-outline-custom btn-sm dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
-                                        เลือกเพื่อเปลี่ยนสถานะ
+                            <div class="mt-3 p-3 bg-light rounded-3 border">
+                                <div class="d-flex flex-wrap align-items-center gap-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <small class="text-muted" style="font-size:0.72em;"><i class="fas fa-exchange-alt me-1"></i>เปลี่ยนสถานะ:</small>
+                                        <div class="dropdown">
+                                            <button class="btn btn-outline-custom btn-sm dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
+                                                เลือกเพื่อเปลี่ยนสถานะ
+                                            </button>
+                                            <ul class="dropdown-menu shadow-sm border-0 mt-1" style="font-size:0.85em; border-radius: 12px; overflow: hidden;">
+                                                ${items}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1" onclick="VehicleLogs.showEdit('${ev.id}', true)" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
+                                        <i class="fas fa-edit" style="font-size: 0.9em;"></i> แก้ไข
                                     </button>
-                                    <ul class="dropdown-menu shadow-sm border-0 mt-1" style="font-size:0.85em; border-radius: 12px; overflow: hidden;">
-                                        ${items}
-                                    </ul>
                                 </div>
-                                <button class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1" onclick="VehicleLogs.showEdit('${ev.id}', true)" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
-                                    <i class="fas fa-edit" style="font-size: 0.9em;"></i> แก้ไข
-                                </button>
                             </div>`;
                     }
 
