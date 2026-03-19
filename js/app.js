@@ -1,6 +1,6 @@
 /**
  * ============================================================
- * Office Management System — Frontend JavaScript
+ * CPD-RAYONG | Office Management System — Frontend JavaScript
  * ============================================================
  * Handles: API calls, Auth, CRUD, File uploads, UI navigation
  * ============================================================
