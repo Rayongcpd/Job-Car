@@ -88,6 +88,16 @@ const AppState = {
             }
         });
 
+        // Toggle Cancel Reason visibility
+        document.getElementById('vehStatus').addEventListener('change', (e) => {
+            const group = document.getElementById('vehCancelReasonGroup');
+            if (e.target.value === 'Cancelled') {
+                group.style.display = 'block';
+            } else {
+                group.style.display = 'none';
+            }
+        });
+
         showApp();
     }
 };
@@ -993,6 +1003,8 @@ const VehicleLogs = {
 
         document.getElementById('vehDriver').value = '';
         document.getElementById('vehStatus').value = 'Approved';
+        document.getElementById('vehCancelReason').value = '';
+        document.getElementById('vehCancelReasonGroup').style.display = 'none';
         new bootstrap.Modal(document.getElementById('vehFormModal')).show();
     },
 
@@ -1023,7 +1035,10 @@ const VehicleLogs = {
         document.getElementById('vehReturnTime').value = parseTimeForInput(item.ReturnTime);
 
         document.getElementById('vehDriver').value = item.Driver || '';
-        document.getElementById('vehStatus').value = item.Status || 'Approved';
+        const status = item.Status || 'Approved';
+        document.getElementById('vehStatus').value = status;
+        document.getElementById('vehCancelReason').value = item.CancelReason || '';
+        document.getElementById('vehCancelReasonGroup').style.display = status === 'Cancelled' ? 'block' : 'none';
         new bootstrap.Modal(document.getElementById('vehFormModal')).show();
     },
 
@@ -1050,7 +1065,8 @@ const VehicleLogs = {
         }
 
         const action = id ? 'updateVehicleLog' : 'addVehicleLog';
-        const payload = { action, date, carLicense, purpose, destination, requestor, passengerCount, departureTime, returnTime, mileageStart, mileageEnd, driver, status, sendNotification };
+        const cancelReason = document.getElementById('vehCancelReason').value.trim();
+        const payload = { action, date, carLicense, purpose, destination, requestor, passengerCount, departureTime, returnTime, mileageStart, mileageEnd, driver, status, sendNotification, cancelReason };
         if (id) payload.id = id;
 
         const result = await API.post(payload);
@@ -1096,6 +1112,12 @@ const VehicleLogs = {
         const detailModalInstance = bootstrap.Modal.getInstance(detailModalEl);
         if (detailModalInstance) detailModalInstance.hide();
 
+        let cancelReason = '';
+        if (newStatus === 'Cancelled') {
+            cancelReason = prompt('กรุณาระบุเหตุผลในการยกเลิก (ระบุได้สูงสุด 100 ตัวอักษร):') || 'ไม่ระบุ';
+            if (cancelReason === null) return; 
+        }
+
         // Build payload from calendar event data (no need for AppState.vehicleLogs)
         const payload = {
             action: 'updateVehicleLog',
@@ -1112,6 +1134,7 @@ const VehicleLogs = {
             mileageEnd: '',
             driver: ev.driver || '',
             status: newStatus,
+            cancelReason: cancelReason,
             sendNotification: false
         };
 
@@ -1241,10 +1264,10 @@ const Calendar = {
                                     postedBy: item.PostedBy || ''
                                 });
                             }
-                        } else if (status === 'Approved' || status === 'Completed') {
-                            // General users only see Approved/Completed
+                        } else if (status === 'Approved' || status === 'Completed' || status === 'Cancelled') {
+                            // General users see Approved/Completed/Cancelled
                             this.events.push({
-                                type: 'vehicle',
+                                type: status === 'Cancelled' ? 'cancelled' : 'vehicle',
                                 date: this.normalizeDate(item.Date),
                                 label: item.CarLicense || 'รถ',
                                 id: item.ID,
@@ -1256,7 +1279,8 @@ const Calendar = {
                                 passengerCount: item.PassengerCount || 1,
                                 departureTime: item.DepartureTime || '',
                                 returnTime: item.ReturnTime || '',
-                                postedBy: item.PostedBy || ''
+                                postedBy: item.PostedBy || '',
+                                cancelReason: item.CancelReason || ''
                             });
                         }
                     }
@@ -1335,6 +1359,13 @@ const Calendar = {
                 </div>`;
             }
 
+            const cancelledEvents = dayEvents.filter(e => e.type === 'cancelled');
+            if (cancelledEvents.length > 0) {
+                eventsHtml += `<div class="calendar-event cancelled" onclick="Calendar.showGroup('${dateStr}', 'cancelled')" title="ดูรายการที่ยกเลิก">
+                    <span class="event-icon">❌</span> <span class="event-label">รายการที่ยกเลิก</span> <span class="event-count">(${cancelledEvents.length})</span>
+                </div>`;
+            }
+
             html += `<div class="calendar-day${isToday ? ' today' : ''}">
                 <div class="day-number">${d}</div>
                 ${eventsHtml}
@@ -1385,6 +1416,7 @@ const Calendar = {
         let typeName = 'การปฏิบัติงาน';
         if (type === 'vehicle') typeName = 'บันทึกการใช้รถ';
         if (type === 'prebook') typeName = 'Prebook (รอนุมัติ)';
+        if (type === 'cancelled') typeName = 'รายการที่ยกเลิก';
 
         // Format dateStr (YYYY-MM-DD) to Thai date
         const [yyyy, mm, dd] = dateStr.split('-');
@@ -1491,6 +1523,7 @@ const Calendar = {
                             </div>
                             <p class="mb-1 small" style="color: var(--color-veh-destination, var(--text-secondary)) !important;"><i class="fas fa-map-marker-alt me-1"></i> สถานที่ : ${escapeHtml(ev.destination || '-')}</p>
                             <p class="mb-0 small" style="color: var(--color-veh-purpose, var(--text-secondary)) !important;"><i class="fas fa-bullseye me-1"></i> เพื่อ : ${escapeHtml(ev.purpose || '-')}</p>
+                            ${ev.status === 'Cancelled' ? `<p class="mt-2 mb-0 p-2 rounded small" style="background: rgba(231, 76, 60, 0.1); border-left: 3px solid var(--accent-danger); color: var(--accent-danger);"><i class="fas fa-comment-slash me-1"></i> <strong>เหตุผลที่ยกเลิก:</strong> ${escapeHtml(ev.cancelReason || 'ไม่ระบุ')}</p>` : ''}
                             ${quickStatusHtml}
                             <hr style="border-color: var(--border-color); margin: 8px 0;">
                             <small class="text-muted d-block text-end fst-italic" style="font-size:0.7em;"><i class="fas fa-user me-1"></i> ผู้สร้างโพสนี้: ${escapeHtml(ev.postedBy || '-')}</small>

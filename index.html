@@ -135,6 +135,7 @@
             <span class="legend-item"><span class="legend-dot announcement"></span>การปฏิบัติงาน</span>
             <span class="legend-item"><span class="legend-dot vehicle"></span>บันทึกการขอใช้รถ (Approved)</span>
             <span class="legend-item admin-only" style="display: none;"><span class="legend-dot" style="background: var(--accent-warning);"></span>Prebook (รอดำเนินการ)</span>
+            <span class="legend-item"><span class="legend-dot" style="background: var(--accent-danger);"></span>บันทึกการใช้รถ (Cancelled)</span>
           </div>
 
           <div class="calendar-container-scroll">
@@ -627,6 +628,11 @@
                 <option value="Completed">Completed (เสร็จสิ้น)</option>
                 <option value="Cancelled">Cancelled (ยกเลิก)</option>
               </select>
+            </div>
+            <!-- เหตุผลในการยกเลิก (แสดงเมื่อสถานะเป็น Cancelled) -->
+            <div class="col-md-12" id="vehCancelReasonGroup" style="display: none;">
+              <label class="form-label" style="color:var(--text-secondary)">เหตุผลที่ยกเลิก *</label>
+              <textarea class="form-control" id="vehCancelReason" rows="2" placeholder="ระบุเหตุผลที่ต้องยกเลิกรายการนี้"></textarea>
             </div>
             <!-- แจ้งเตือน LINE -->
             <div class="col-md-12">

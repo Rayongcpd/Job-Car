@@ -983,6 +983,10 @@ input:checked+.slider .fa-moon {
     background: var(--accent-warning);
 }
 
+.legend-dot.cancelled {
+    background: var(--accent-danger);
+}
+
 .calendar-grid {
     display: grid;
     /* minmax(0, 1fr) บังคับให้ช่องสามารถหดเล็กลงได้เท่ากับ 0 เพื่อให้ text-overflow ทำงานได้ และไม่ดันตารางให้ยาวออกไป */
@@ -1099,6 +1103,12 @@ input:checked+.slider .fa-moon {
 .calendar-event.prebook {
     background: var(--accent-warning);
     border-left: 3px solid rgba(255, 255, 255, 0.5);
+}
+
+.calendar-event.cancelled {
+    background: var(--accent-danger);
+    border-left: 3px solid rgba(255, 255, 255, 0.5);
+    opacity: 0.8;
 }
 
 /* Status Badge for Prebook */
