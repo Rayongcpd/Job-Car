@@ -235,10 +235,11 @@ body {
     background: var(--accent-danger);
     border: none;
     border-radius: var(--radius-md);
-    padding: 8px 18px;
+    padding: 10px 20px;
     color: #fff;
     font-weight: 500;
     transition: var(--transition-base);
+    min-height: 40px;
 }
 
 .btn-danger-custom:hover {
@@ -251,10 +252,11 @@ body {
     background: transparent;
     border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
-    padding: 8px 18px;
+    padding: 10px 20px;
     color: var(--text-secondary);
     font-weight: 400;
     transition: var(--transition-base);
+    min-height: 40px;
 }
 
 .btn-outline-custom:hover {
@@ -264,8 +266,9 @@ body {
 }
 
 .btn-sm {
-    padding: 6px 14px !important;
+    padding: 8px 16px !important;
     font-size: 13px !important;
+    min-height: 36px;
 }
 
 /* ============ TOPBAR ============ */
@@ -312,10 +315,13 @@ body {
 }
 
 .topbar-nav-item {
-    padding: 8px 16px;
+    padding: 10px 18px;
     border-radius: var(--radius-md);
     color: var(--text-secondary);
     font-size: var(--text-sm);
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
     font-weight: 500;
     transition: var(--transition-fast);
     text-decoration: none;
@@ -742,7 +748,10 @@ body {
     color: var(--text-primary) !important;
     transition: var(--transition-fast);
     font-size: var(--text-sm);
-    padding: 8px 16px;
+    padding: 10px 18px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
 }
 
 .dropdown-item:hover {
@@ -1011,11 +1020,11 @@ body {
 .calendar-day-name:first-child { color: var(--accent-danger); }
 
 .calendar-day {
-    min-height: var(--calendar-cell-min-height, 100px);
+    min-height: var(--calendar-cell-min-height, 110px);
     border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
     margin: 2px;
-    padding: var(--space-2);
+    padding: var(--space-2) var(--space-2) var(--space-3);
     transition: var(--transition-fast);
     cursor: default;
     position: relative;
@@ -1065,20 +1074,34 @@ body {
 .calendar-event-dots {
     display: flex;
     flex-wrap: wrap;
-    gap: 3px;
+    gap: 6px;
     margin-top: var(--space-1);
+    padding: 4px 2px;
 }
 
 .calendar-event-dot {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     cursor: pointer;
     transition: var(--transition-fast);
+    position: relative;
+}
+
+/* Enlarge invisible clickable area around dot */
+.calendar-event-dot::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    right: -6px;
+    bottom: -6px;
+    border-radius: 50%;
+    z-index: 1;
 }
 
 .calendar-event-dot:hover {
-    transform: scale(1.4);
+    transform: scale(1.5);
 }
 
 .calendar-event-dot.announcement { background: var(--color-announcement, var(--accent-primary)); }
@@ -1088,11 +1111,13 @@ body {
 
 /* Event count badges inside calendar */
 .calendar-event-count {
-    font-size: 10px;
-    padding: 1px 5px;
+    font-size: 11px;
+    padding: 3px 8px;
     border-radius: var(--radius-full);
     color: white;
     font-weight: 600;
+    min-width: 22px;
+    text-align: center;
     cursor: pointer;
     transition: var(--transition-fast);
 }
@@ -1436,13 +1461,13 @@ body {
 
     .calendar-day {
         min-height: calc((100vh - 200px) / 6);
-        padding: 2px;
+        padding: 6px 4px;
     }
 
     .calendar-day .day-number {
-        font-size: 11px;
-        width: 22px;
-        height: 22px;
+        font-size: 12px;
+        width: 24px;
+        height: 24px;
     }
 
     .day-detail-panel {
@@ -1455,8 +1480,9 @@ body {
     }
 
     .status-tab {
-        padding: 8px 14px;
-        font-size: 12px;
+        padding: 10px 16px;
+        font-size: 13px;
+        min-height: 40px;
     }
 
     /* List cards */
@@ -1471,6 +1497,8 @@ body {
     .list-card-footer .btn {
         flex: 1;
         justify-content: center;
+        min-height: 44px;
+        padding: 10px 16px;
     }
 
     /* Stat cards */
@@ -1501,9 +1529,10 @@ body {
         justify-content: space-between;
         align-items: center;
         text-align: right;
-        padding: 8px 0 !important;
+        padding: 12px 0 !important;
         border-bottom: 1px solid var(--border-light) !important;
-        font-size: var(--text-sm);
+        font-size: var(--text-base);
+        min-height: 44px;
     }
 
     .table tbody td:last-child {
@@ -1547,6 +1576,29 @@ body {
     .btn-primary-custom,
     .btn-outline-custom {
         font-size: var(--text-sm);
+    }
+
+    /* Larger touch targets for calendar dots on small screens */
+    .calendar-event-dots {
+        gap: 4px;
+    }
+
+    .calendar-event-dot {
+        width: 10px;
+        height: 10px;
+    }
+
+    .calendar-event-dot::before {
+        top: -8px;
+        left: -8px;
+        right: -8px;
+        bottom: -8px;
+    }
+
+    .calendar-event-count {
+        font-size: 10px;
+        padding: 2px 6px;
+        min-width: 20px;
     }
 }
 
