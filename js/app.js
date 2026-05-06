@@ -1499,7 +1499,7 @@ const Calendar = {
                 const typeLabel = ev.type === 'announcement' ? 'การปฏิบัติงาน' : ev.type === 'vehicle' ? 'บันทึกการใช้รถ' : ev.type === 'prebook' ? 'Prebook' : 'รายการที่ยกเลิก';
                 const timeStr = ev.time ? formatTime(ev.time) : (ev.departureTime ? formatTime(ev.departureTime) : '');
                 const isVehicle = ev.type === 'vehicle' || ev.type === 'prebook' || ev.type === 'cancelled';
-                const vehicleMeta = isVehicle ? `<br>ผู้ขอ: ${escapeHtml(ev.requestor || '-')} · ${ev.passengerCount || 1} คน` : '';
+                const vehicleMeta = isVehicle ? `<br>ผู้ขอใช้รถ: ${escapeHtml(ev.requestor || '-')} · ${ev.passengerCount || 1} คน` : '';
                 return `
                     <div class="day-detail-item">
                         <div class="day-detail-dot ${dotClass}"></div>
