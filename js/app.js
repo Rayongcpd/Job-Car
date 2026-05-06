@@ -54,7 +54,6 @@ const AppState = {
     /** Initialize App */
     async init() {
         this.loadUser();
-        ThemeModule.init();
 
         // Load settings configuration
         await Settings.init();
@@ -1406,6 +1405,7 @@ const Calendar = {
             const newsEvents = dayEvents.filter(e => e.type === 'announcement');
             const vehicleEvents = dayEvents.filter(e => e.type === 'vehicle');
             const prebookEvents = dayEvents.filter(e => e.type === 'prebook');
+            const cancelledEvents = dayEvents.filter(e => e.type === 'cancelled');
 
             let dotsHtml = '<div class="calendar-event-dots">';
             let countsHtml = '';
