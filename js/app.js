@@ -1498,13 +1498,15 @@ const Calendar = {
                 const dotClass = ev.type === 'announcement' ? 'announcement' : ev.type === 'vehicle' ? 'vehicle' : ev.type === 'prebook' ? 'prebook' : 'cancelled';
                 const typeLabel = ev.type === 'announcement' ? 'การปฏิบัติงาน' : ev.type === 'vehicle' ? 'บันทึกการใช้รถ' : ev.type === 'prebook' ? 'Prebook' : 'รายการที่ยกเลิก';
                 const timeStr = ev.time ? formatTime(ev.time) : (ev.departureTime ? formatTime(ev.departureTime) : '');
+                const isVehicle = ev.type === 'vehicle' || ev.type === 'prebook' || ev.type === 'cancelled';
+                const vehicleMeta = isVehicle ? `<br>ผู้ขอ: ${escapeHtml(ev.requestor || '-')} · ${ev.passengerCount || 1} คน` : '';
                 return `
                     <div class="day-detail-item">
                         <div class="day-detail-dot ${dotClass}"></div>
                         <div class="day-detail-content">
                             <div class="day-detail-time">${typeLabel}${timeStr ? ' · ' + timeStr : ''}</div>
                             <div class="day-detail-title">${escapeHtml(ev.label)}</div>
-                            <div class="day-detail-meta">${escapeHtml(ev.location || ev.destination || ev.purpose || '-')}</div>
+                            <div class="day-detail-meta">${escapeHtml(ev.location || ev.destination || ev.purpose || '-')}${vehicleMeta}</div>
                         </div>
                     </div>
                 `;
