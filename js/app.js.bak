@@ -209,7 +209,7 @@ const Auth = {
         }
 
         loginBtn.disabled = false;
-        loginBtn.innerHTML = '<i data-lucide="log-in" style="width:18px;height:18px;" class="me-2"></i>เข้าสู่ระบบ';
+        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>เข้าสู่ระบบ';
     },
 
     /** Handle logout */
@@ -523,7 +523,7 @@ const Settings = {
         }
 
         btn.disabled = false;
-        btn.innerHTML = '<i data-lucide="save" style="width:16px;height:16px;" class="me-2"></i>บันทึกการตั้งค่า';
+        btn.innerHTML = '<i class="fas fa-save me-2"></i>บันทึกการตั้งค่า';
     }
 };
 
@@ -569,10 +569,10 @@ const FilterUtils = {
                     </select>`;
                 break;
             case 'upcoming':
-                html = `<div class="small pt-2" style="color:var(--text-tertiary)">แสดงรายการวันนี้และอนาคต</div>`;
+                html = `<div class="text-muted small pt-2">แสดงรายการวันนี้และอนาคต</div>`;
                 break;
             default: // all
-                html = `<div class="small pt-2" style="color:var(--text-tertiary)">แสดงข้อมูลทั้งหมด</div>`;
+                html = `<div class="text-muted small pt-2">แสดงข้อมูลทั้งหมด</div>`;
         }
         container.innerHTML = html;
     },
@@ -655,8 +655,8 @@ const FilterUtils = {
 const Announcements = {
     /** Fetch and render all announcements */
     async load() {
-        const listContainer = document.getElementById('announcementsList');
-        listContainer.innerHTML = `<div class="loading-spinner"><div class="spinner-border"></div></div>`;
+        const container = document.getElementById('announcementsTableBody');
+        container.innerHTML = loadingHTML();
 
         const result = await API.get({ action: 'getAnnouncements' });
 
@@ -664,25 +664,22 @@ const Announcements = {
             AppState.announcements = result.data;
             this.applyFilter();
         } else {
-            listContainer.innerHTML = emptyHTML('ไม่สามารถโหลดข้อมูลได้');
+            container.innerHTML = emptyHTML('ไม่สามารถโหลดข้อมูลได้');
         }
     },
 
-    /** Render announcements cards */
+    /** Render announcements table */
     render(data) {
-        const listContainer = document.getElementById('announcementsList');
-        const tableContainer = document.getElementById('announcementsTableBody');
+        const container = document.getElementById('announcementsTableBody');
 
         if (!data || data.length === 0) {
-            listContainer.innerHTML = emptyHTML('ยังไม่มีรายการปฏิบัติงาน');
-            tableContainer.innerHTML = '';
+            container.innerHTML = `<tr><td colspan="10">${emptyHTML('ยังไม่มีรายการปฏิบัติงาน')}</td></tr>`;
             return;
         }
 
         const today = new Date().toISOString().split('T')[0];
-
-        // Card view
-        listContainer.innerHTML = data.map((item, index) => {
+        container.innerHTML = data.map((item, index) => {
+            // Format time display
             let timeDisplay = '-';
             if (item.Time) {
                 timeDisplay = formatTime(item.Time);
@@ -691,65 +688,35 @@ const Announcements = {
             const isPast = Calendar.normalizeDate(item.Date) < today;
 
             return `
-      <div class="list-card fade-in${isPast ? ' row-past' : ''}" style="animation-delay: ${index * 0.05}s">
-        <div class="list-card-header">
-          <div class="list-card-title">${escapeHtml(item.Title || '')}</div>
-          <span style="color:var(--text-tertiary);font-size:12px;white-space:nowrap">#${index + 1}</span>
-        </div>
-        <div class="list-card-meta">
-          <span><i data-lucide="calendar" style="width:12px;height:12px;"></i> ${formatThaiDate(item.Date)}</span>
-          <span><i data-lucide="clock" style="width:12px;height:12px;"></i> ${timeDisplay}</span>
-          ${item.Location ? `<span><i data-lucide="map-pin" style="width:12px;height:12px;"></i> ${escapeHtml(item.Location)}</span>` : ''}
-          ${item.CoopParticipation ? `<span><i data-lucide="users" style="width:12px;height:12px;"></i> ${escapeHtml(item.CoopParticipation)}</span>` : ''}
-          ${item.WorkGroup ? `<span><i data-lucide="layers" style="width:12px;height:12px;"></i> ${escapeHtml(item.WorkGroup)}</span>` : ''}
-        </div>
-        <div class="list-card-body">${escapeHtml(truncate(item.Detail || '', 120))}</div>
-        <div class="list-card-footer">
-          <span style="font-size:12px;color:var(--text-tertiary)"><i data-lucide="user" style="width:12px;height:12px;"></i> ${escapeHtml(item.PostedBy || '')}</span>
-          <div class="list-card-actions">
-            ${item.FileURL ? `<a href="${item.FileURL}" target="_blank" class="file-link"><i data-lucide="paperclip" style="width:14px;height:14px;"></i></a>` : ''}
-            <button class="btn btn-outline-custom btn-sm" onclick="Announcements.showDetail('${item.ID}')" title="ดูรายละเอียด">
-              <i data-lucide="eye" style="width:14px;height:14px;"></i>
-            </button>
-            ${AppState.isAdmin() ? `
-            <button class="btn btn-outline-custom btn-sm" onclick="Announcements.showEdit('${item.ID}')" title="แก้ไข">
-              <i data-lucide="pencil" style="width:14px;height:14px;"></i>
-            </button>
-            <button class="btn btn-danger-custom btn-sm" onclick="Announcements.confirmDelete('${item.ID}')" title="ลบ">
-              <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-            </button>
-            ` : ''}
-          </div>
-        </div>
-      </div>
-    `;
-        }).join('');
-
-        // Hidden table for print
-        tableContainer.innerHTML = data.map((item, index) => {
-            let timeDisplay = '-';
-            if (item.Time) {
-                timeDisplay = formatTime(item.Time);
-                if (item.TimeSuffix) timeDisplay += ' ' + escapeHtml(item.TimeSuffix);
-            }
-            const isPast = Calendar.normalizeDate(item.Date) < today;
-            return `
-      <tr class="${isPast ? 'row-past' : ''}">
-        <td>${index + 1}</td>
-        <td>${formatThaiDate(item.Date)}</td>
-        <td>${timeDisplay}</td>
-        <td><strong>${escapeHtml(item.Title || '')}</strong><br><small>${truncate(item.Detail || '', 40)}</small></td>
-        <td>${escapeHtml(item.Location || '-')}</td>
-        <td>${escapeHtml(item.CoopParticipation || '-')}</td>
-        <td>${escapeHtml(item.WorkGroup || '-')}</td>
-        <td>${item.FileURL ? 'มี' : '-'}</td>
-        <td>${escapeHtml(item.PostedBy || '')}</td>
-        <td></td>
+      <tr class="fade-in${isPast ? ' row-past' : ''}" style="animation-delay: ${index * 0.05}s">
+        <td data-label="#"><span style="color: var(--text-muted); font-size: 12px;">${index + 1}</span></td>
+        <td data-label="วันที่">${formatThaiDate(item.Date)}</td>
+        <td data-label="เวลา">${timeDisplay}</td>
+        <td data-label="เรื่อง">
+          <strong>${escapeHtml(item.Title || '')}</strong>
+          <br><small class="text-muted">${truncate(item.Detail || '', 60)}</small>
+        </td>
+        <td data-label="สถานที่">${escapeHtml(item.Location || '-')}</td>
+        <td data-label="สหกรณ์จังหวัดระยอง">${escapeHtml(item.CoopParticipation || '-')}</td>
+        <td data-label="กลุ่มงาน">${escapeHtml(item.WorkGroup || '-')}</td>
+        <td data-label="เอกสารแนบ">${item.FileURL ? `<a href="${item.FileURL}" target="_blank" class="file-link"><i class="fas fa-paperclip"></i> ดูไฟล์</a>` : '<span style="color: var(--text-muted);">-</span>'}</td>
+        <td data-label="โพสต์โดย"><small>${escapeHtml(item.PostedBy || '')}</small></td>
+        <td data-label="จัดการ">
+          <button class="btn btn-outline-custom btn-sm me-1" onclick="Announcements.showDetail('${item.ID}')" title="ดูรายละเอียด">
+            <i class="fas fa-eye"></i>
+          </button>
+          ${AppState.isAdmin() ? `
+          <button class="btn btn-outline-custom btn-sm me-1" onclick="Announcements.showEdit('${item.ID}')" title="แก้ไข">
+            <i class="fas fa-pen-to-square"></i>
+          </button>
+          <button class="btn btn-danger-custom btn-sm" onclick="Announcements.confirmDelete('${item.ID}')" title="ลบ">
+            <i class="fas fa-trash-can"></i>
+          </button>
+          ` : ''}
+        </td>
       </tr>
     `;
         }).join('');
-
-        setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 10);
     },
 
     /** Show detail modal */
@@ -772,11 +739,11 @@ const Announcements = {
       <p><strong>สถานที่:</strong> ${escapeHtml(item.Location || '-')}</p>
       <p><strong>สหกรณ์จังหวัดระยอง:</strong> ${escapeHtml(item.CoopParticipation || '-')}</p>
       <p><strong>กลุ่มงาน:</strong> ${escapeHtml(item.WorkGroup || '-')}</p>
-      ${item.FileURL ? `<p><strong>เอกสารแนบ:</strong> <a href="${item.FileURL}" target="_blank" class="file-link"><i data-lucide="download" style="width:14px;height:14px;"></i> ดาวน์โหลดไฟล์</a></p>` : ''}
-      <hr style="border-color: var(--border-light);">
+      ${item.FileURL ? `<p><strong>เอกสารแนบ:</strong> <a href="${item.FileURL}" target="_blank" class="file-link"><i class="fas fa-download"></i> ดาวน์โหลดไฟล์</a></p>` : ''}
+      <hr style="border-color: var(--border-color);">
       <div class="detail-text">${escapeHtml(item.Detail || 'ไม่มีรายละเอียด')}</div>
-      <hr style="border-color: var(--border-light);">
-      <p class="small" style="text-align: right;color:var(--text-tertiary)"><strong>โพสต์โดย:</strong> ${item.PostedBy}</p>
+      <hr style="border-color: var(--border-color);">
+      <p class="text-muted small" style="text-align: right;"><strong>โพสต์โดย:</strong> ${item.PostedBy}</p>
     `;
         new bootstrap.Modal(document.getElementById('detailModal')).show();
     },
@@ -966,8 +933,8 @@ const VehicleLogs = {
 
     /** Fetch and render all vehicle logs */
     async load() {
-        const listContainer = document.getElementById('vehicleList');
-        listContainer.innerHTML = `<div class="loading-spinner"><div class="spinner-border"></div></div>`;
+        const container = document.getElementById('vehicleTableBody');
+        container.innerHTML = loadingHTML();
 
         const result = await API.get({ action: 'getVehicleLogs' });
 
@@ -975,85 +942,50 @@ const VehicleLogs = {
             AppState.vehicleLogs = result.data;
             this.applyFilter();
         } else {
-            listContainer.innerHTML = emptyHTML('ไม่สามารถโหลดข้อมูลได้');
+            container.innerHTML = emptyHTML('ไม่สามารถโหลดข้อมูลได้');
         }
     },
 
-    /** Render vehicle logs cards */
+    /** Render vehicle logs table */
     render(data) {
-        const listContainer = document.getElementById('vehicleList');
-        const tableContainer = document.getElementById('vehicleTableBody');
+        const container = document.getElementById('vehicleTableBody');
 
         if (!data || data.length === 0) {
-            listContainer.innerHTML = emptyHTML('ยังไม่มีบันทึกการใช้รถ');
-            tableContainer.innerHTML = '';
+            container.innerHTML = `<tr><td colspan="10">${emptyHTML('ยังไม่มีบันทึกการใช้รถ')}</td></tr>`;
             return;
         }
 
         const today = new Date().toISOString().split('T')[0];
-
-        // Card view
-        listContainer.innerHTML = data.map((item, index) => {
-            const isPast = Calendar.normalizeDate(item.Date) < today;
-            const statusClass = (item.Status || '').toLowerCase();
-            const statusLabel = item.Status === 'Pending' ? 'Prebook (รอดำเนินการ)' : escapeHtml(item.Status || '');
-            return `
-      <div class="list-card fade-in${isPast ? ' row-past' : ''}" style="animation-delay: ${index * 0.05}s">
-        <div class="list-card-header">
-          <div class="list-card-title">${escapeHtml(item.Purpose || '-')}</div>
-          <span class="badge-status badge-${statusClass}">${statusLabel}</span>
-        </div>
-        <div class="list-card-meta">
-          <span><i data-lucide="calendar" style="width:12px;height:12px;"></i> ${formatThaiDate(item.Date)}</span>
-          <span><i data-lucide="car" style="width:12px;height:12px;"></i> ${escapeHtml(item.CarLicense || '')}</span>
-          <span><i data-lucide="clock" style="width:12px;height:12px;"></i> ${formatTime(item.DepartureTime)} - ${formatTime(item.ReturnTime)}</span>
-          ${item.Destination ? `<span><i data-lucide="map-pin" style="width:12px;height:12px;"></i> ${escapeHtml(item.Destination)}</span>` : ''}
-        </div>
-        <div class="list-card-body">
-          ผู้ขอ: <strong>${escapeHtml(item.Requestor || item.requestor || '-')}</strong>
-          <span style="color:var(--text-tertiary)"> · ${escapeHtml(item.PassengerCount || 1)} คน · พนักงานขับ: ${item.Driver === 'พนักงานขับรถลา' ? '<span style="color:var(--accent-danger);font-weight:bold;">' + escapeHtml(item.Driver) + '</span>' : escapeHtml(item.Driver || '-')}</span>
-        </div>
-        <div class="list-card-footer">
-          <span style="font-size:12px;color:var(--text-tertiary)">#${index + 1}</span>
-          <div class="list-card-actions">
-            ${AppState.isAdmin() ? `
-            <button class="btn btn-outline-custom btn-sm" onclick="ExportUtils.printVehicleForm('${item.ID}')" title="พิมพ์ใบขออนุญาต">
-              <i data-lucide="printer" style="width:14px;height:14px;"></i>
-            </button>
-            <button class="btn btn-outline-custom btn-sm" onclick="VehicleLogs.showEdit('${item.ID}')" title="แก้ไข">
-              <i data-lucide="pencil" style="width:14px;height:14px;"></i>
-            </button>
-            <button class="btn btn-danger-custom btn-sm" onclick="VehicleLogs.confirmDelete('${item.ID}')" title="ลบ">
-              <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-            </button>
-            ` : ''}
-          </div>
-        </div>
-      </div>
-    `;
-        }).join('');
-
-        // Hidden table for print
-        tableContainer.innerHTML = data.map((item, index) => {
+        container.innerHTML = data.map((item, index) => {
             const isPast = Calendar.normalizeDate(item.Date) < today;
             return `
-      <tr class="${isPast ? 'row-past' : ''}">
-        <td>${index + 1}</td>
-        <td>${formatThaiDate(item.Date)}</td>
-        <td>${formatTime(item.DepartureTime)}</td>
-        <td>${formatTime(item.ReturnTime)}</td>
-        <td>${escapeHtml(item.CarLicense || '')}</td>
-        <td>${escapeHtml(item.Purpose || '-')}</td>
-        <td>${escapeHtml(item.Destination || '')}</td>
-        <td>${escapeHtml(item.Requestor || item.requestor || '-')} (${escapeHtml(item.PassengerCount || 1)} คน)</td>
-        <td>${escapeHtml(item.Driver || '')}</td>
-        <td>${escapeHtml(item.Status || '')}</td>
-        <td></td>
+      <tr class="fade-in${isPast ? ' row-past' : ''}" style="animation-delay: ${index * 0.05}s">
+        <td data-label="#"><span style="color: var(--text-muted); font-size: 12px;">${index + 1}</span></td>
+        <td data-label="วันที่">${formatThaiDate(item.Date)}</td>
+        <td data-label="เวลาไป">${formatTime(item.DepartureTime)}</td>
+        <td data-label="เวลากลับ">${formatTime(item.ReturnTime)}</td>
+        <td data-label="ทะเบียนรถ"><strong>${escapeHtml(item.CarLicense || '')}</strong></td>
+        <td data-label="จุดประสงค์">${escapeHtml(item.Purpose || '-')}</td>
+        <td data-label="ปลายทาง">${escapeHtml(item.Destination || '')}</td>
+        <td data-label="ผู้ขอใช้/กลุ่มงาน">${escapeHtml(item.Requestor || item.requestor || '-')} <br><small class="text-muted"><i class="fas fa-users"></i> ${escapeHtml(item.PassengerCount || 1)} คน</small></td>
+        <td data-label="พนักงานขับ">${item.Driver === 'พนักงานขับรถลา' ? '<span style="color:#dc3545;font-weight:bold;">' + escapeHtml(item.Driver) + '</span>' : escapeHtml(item.Driver || '')}</td>
+        <td data-label="สถานะ"><span class="badge-status badge-${(item.Status || '').toLowerCase()}">${escapeHtml(item.Status || '')}</span></td>
+        <td data-label="จัดการ">
+          ${AppState.isAdmin() ? `
+          <button class="btn btn-outline-custom btn-sm me-1" onclick="ExportUtils.printVehicleForm('${item.ID}')" title="พิมพ์ใบขออนุญาต">
+            <i class="fas fa-print"></i>
+          </button>
+          <button class="btn btn-outline-custom btn-sm me-1" onclick="VehicleLogs.showEdit('${item.ID}')" title="แก้ไข">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn btn-danger-custom btn-sm" onclick="VehicleLogs.confirmDelete('${item.ID}')" title="ลบ">
+            <i class="fas fa-trash"></i>
+          </button>
+          ` : ''}
+        </td>
       </tr>
     `;
         }).join('');
-
-        setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 10);
     },
 
     /** Show add form modal */
@@ -1407,41 +1339,36 @@ const Calendar = {
             const vehicleEvents = dayEvents.filter(e => e.type === 'vehicle');
             const prebookEvents = dayEvents.filter(e => e.type === 'prebook');
 
-            let dotsHtml = '<div class="calendar-event-dots">';
-            let countsHtml = '';
+            let eventsHtml = '';
 
             if (newsEvents.length > 0) {
-                for (let i = 0; i < Math.min(newsEvents.length, 3); i++) {
-                    dotsHtml += `<span class="calendar-event-dot announcement" onclick="Calendar.showGroup('${dateStr}', 'announcement')" title="ดูการปฏิบัติงาน"></span>`;
-                }
-                if (newsEvents.length > 3) {
-                    countsHtml += `<span class="calendar-event-count announcement" onclick="Calendar.showGroup('${dateStr}', 'announcement')">+${newsEvents.length}</span>`;
-                }
+                eventsHtml += `<div class="calendar-event announcement" onclick="Calendar.showGroup('${dateStr}', 'announcement')" title="ดูการปฏิบัติงาน">
+                    <span class="event-icon">📋</span> <span class="event-label">การปฏิบัติงาน</span> <span class="event-count">(${newsEvents.length})</span>
+                </div>`;
             }
-            if (vehicleEvents.length > 0) {
-                for (let i = 0; i < Math.min(vehicleEvents.length, 3); i++) {
-                    dotsHtml += `<span class="calendar-event-dot vehicle" onclick="Calendar.showGroup('${dateStr}', 'vehicle')" title="ดูบันทึกการใช้รถ"></span>`;
-                }
-                if (vehicleEvents.length > 3) {
-                    countsHtml += `<span class="calendar-event-count vehicle" onclick="Calendar.showGroup('${dateStr}', 'vehicle')">+${vehicleEvents.length}</span>`;
-                }
-            }
-            if (prebookEvents.length > 0) {
-                for (let i = 0; i < Math.min(prebookEvents.length, 2); i++) {
-                    dotsHtml += `<span class="calendar-event-dot prebook" onclick="Calendar.showGroup('${dateStr}', 'prebook')" title="ดู Prebook (รอนุมัติ)"></span>`;
-                }
-            }
-            if (cancelledEvents.length > 0) {
-                for (let i = 0; i < Math.min(cancelledEvents.length, 2); i++) {
-                    dotsHtml += `<span class="calendar-event-dot cancelled" onclick="Calendar.showGroup('${dateStr}', 'cancelled')" title="ดูรายการที่ยกเลิก"></span>`;
-                }
-            }
-            dotsHtml += '</div>';
 
-            html += `<div class="calendar-day${isToday ? ' today' : ''}" onclick="Calendar.showDayDetail('${dateStr}')">
+            if (prebookEvents.length > 0) {
+                eventsHtml += `<div class="calendar-event prebook" onclick="Calendar.showGroup('${dateStr}', 'prebook')" title="ดู Prebook (รอนุมัติ)">
+                    <span class="event-icon">⚠️</span> <span class="event-label">Prebook (รอนุมัติ)</span> <span class="event-count">(${prebookEvents.length})</span>
+                </div>`;
+            }
+
+            if (vehicleEvents.length > 0) {
+                eventsHtml += `<div class="calendar-event vehicle" onclick="Calendar.showGroup('${dateStr}', 'vehicle')" title="ดูบันทึกการใช้รถ">
+                    <span class="event-icon">🚗</span> <span class="event-label">บันทึกการใช้รถ</span> <span class="event-count">(${vehicleEvents.length})</span>
+                </div>`;
+            }
+
+            const cancelledEvents = dayEvents.filter(e => e.type === 'cancelled');
+            if (cancelledEvents.length > 0) {
+                eventsHtml += `<div class="calendar-event cancelled" onclick="Calendar.showGroup('${dateStr}', 'cancelled')" title="ดูรายการที่ยกเลิก">
+                    <span class="event-icon">❌</span> <span class="event-label">รายการที่ยกเลิก</span> <span class="event-count">(${cancelledEvents.length})</span>
+                </div>`;
+            }
+
+            html += `<div class="calendar-day${isToday ? ' today' : ''}">
                 <div class="day-number">${d}</div>
-                ${dotsHtml}
-                ${countsHtml}
+                ${eventsHtml}
             </div>`;
         }
 
@@ -1475,43 +1402,8 @@ const Calendar = {
 
     /** Show event detail in modal */
     showEvent(e, type, id) {
+        // Legacy function, kept just in case, but showGroup is preferred now.
         this.showGroup(this.currentDate.toISOString().split('T')[0], type);
-    },
-
-    /** Show day detail panel below calendar */
-    showDayDetail(dateStr) {
-        if (event) event.stopPropagation();
-        const panel = document.getElementById('dayDetailPanel');
-        const content = document.getElementById('dayDetailContent');
-        const title = document.getElementById('dayDetailTitle');
-
-        const [yyyy, mm, dd] = dateStr.split('-');
-        const thaiYear = parseInt(yyyy) + 543;
-        const thaiMonth = Calendar.THAI_MONTHS[parseInt(mm) - 1];
-        title.textContent = `รายการในวันที่ ${parseInt(dd)} ${thaiMonth} ${thaiYear}`;
-
-        const dayEvents = this.events.filter(ev => ev.date === dateStr);
-        if (dayEvents.length === 0) {
-            content.innerHTML = '<div class="day-detail-empty">ไม่มีรายการในวันนี้</div>';
-        } else {
-            content.innerHTML = dayEvents.map(ev => {
-                const dotClass = ev.type === 'announcement' ? 'announcement' : ev.type === 'vehicle' ? 'vehicle' : ev.type === 'prebook' ? 'prebook' : 'cancelled';
-                const typeLabel = ev.type === 'announcement' ? 'การปฏิบัติงาน' : ev.type === 'vehicle' ? 'บันทึกการใช้รถ' : ev.type === 'prebook' ? 'Prebook' : 'รายการที่ยกเลิก';
-                const timeStr = ev.time ? formatTime(ev.time) : (ev.departureTime ? formatTime(ev.departureTime) : '');
-                return `
-                    <div class="day-detail-item">
-                        <div class="day-detail-dot ${dotClass}"></div>
-                        <div class="day-detail-content">
-                            <div class="day-detail-time">${typeLabel}${timeStr ? ' · ' + timeStr : ''}</div>
-                            <div class="day-detail-title">${escapeHtml(ev.label)}</div>
-                            <div class="day-detail-meta">${escapeHtml(ev.location || ev.destination || ev.purpose || '-')}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        panel.style.display = 'block';
-        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     },
 
     /** Show grouped events in modal */
@@ -1539,7 +1431,7 @@ const Calendar = {
 
         let html = '<div class="list-group list-group-flush">';
         if (groupEvents.length === 0) {
-            html += '<div class="p-3 text-center" style="color:var(--text-tertiary)">ไม่พบข้อมูล</div>';
+            html += '<div class="p-3 text-center text-muted">ไม่พบข้อมูล</div>';
         } else {
             groupEvents.forEach(ev => {
                 if (type === 'announcement') {
@@ -1552,14 +1444,14 @@ const Calendar = {
 
                     html += `
                         <div class="list-group-item bg-transparent border-bottom">
-                            <h6 class="mb-1" style="color:var(--accent-primary)">${escapeHtml(ev.label)}</h6>
-                            <p class="mb-1 small" style="color: var(--color-ann-time, var(--text-secondary)) !important;"><i data-lucide="clock" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> เวลา: ${timeDisplay}</p>
-                            <p class="mb-1 small" style="color: var(--color-ann-location, var(--text-secondary)) !important;"><i data-lucide="map-pin" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> สถานที่: ${escapeHtml(ev.location || '-')}</p>
-                            <p class="mb-1 small" style="color: var(--color-ann-coop, var(--text-secondary)) !important;"><i data-lucide="users" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> สหกรณ์จังหวัดระยอง: ${escapeHtml(ev.coopParticipation || '-')}</p>
-                            <p class="mb-1 small" style="color: var(--color-ann-group, var(--text-secondary)) !important;"><i data-lucide="layers" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> กลุ่มงาน: ${escapeHtml(ev.workGroup || '-')}</p>
-                            <p class="mb-1 small" style="color: var(--color-ann-detail, var(--text-secondary)) !important;"><i data-lucide="file-text" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> รายละเอียด: ${escapeHtml(ev.detail || '-')}</p>
-                            <hr style="border-color: var(--border-light); margin: 8px 0;">
-                            <small class="d-block text-end fst-italic" style="font-size:0.7em;color:var(--text-tertiary)"><i data-lucide="user" style="width:10px;height:10px;display:inline;vertical-align:middle;" class="me-1"></i> ผู้สร้างโพสนี้: ${escapeHtml(ev.postedBy)}</small>
+                            <h6 class="mb-1 text-primary">${escapeHtml(ev.label)}</h6>
+                            <p class="mb-1 small" style="color: var(--color-ann-time, var(--text-secondary)) !important;"><i class="fas fa-clock me-1"></i> เวลา: ${timeDisplay}</p>
+                            <p class="mb-1 small" style="color: var(--color-ann-location, var(--text-secondary)) !important;"><i class="fas fa-map-marker-alt me-1"></i> สถานที่: ${escapeHtml(ev.location || '-')}</p>
+                            <p class="mb-1 small" style="color: var(--color-ann-coop, var(--text-secondary)) !important;"><i class="fas fa-handshake me-1"></i> สหกรณ์จังหวัดระยอง: ${escapeHtml(ev.coopParticipation || '-')}</p>
+                            <p class="mb-1 small" style="color: var(--color-ann-group, var(--text-secondary)) !important;"><i class="fas fa-layer-group me-1"></i> กลุ่มงาน: ${escapeHtml(ev.workGroup || '-')}</p>
+                            <p class="mb-1 small" style="color: var(--color-ann-detail, var(--text-secondary)) !important;"><i class="fas fa-file-alt me-1"></i> รายละเอียด: ${escapeHtml(ev.detail || '-')}</p>
+                            <hr style="border-color: var(--border-color); margin: 8px 0;">
+                            <small class="text-muted d-block text-end fst-italic" style="font-size:0.7em;"><i class="fas fa-user me-1"></i> ผู้สร้างโพสนี้: ${escapeHtml(ev.postedBy)}</small>
                         </div>
                     `;
                 } else {
@@ -1602,7 +1494,7 @@ const Calendar = {
                         quickStatusHtml = `
                             <div class="mt-2 d-flex align-items-center justify-content-between gap-2">
                                 <div class="d-flex align-items-center gap-2">
-                                    <small style="font-size:0.72em;color:var(--text-tertiary)"><i data-lucide="refresh-cw" style="width:10px;height:10px;display:inline;vertical-align:middle;" class="me-1"></i>เปลี่ยนสถานะ:</small>
+                                    <small class="text-muted" style="font-size:0.72em;"><i class="fas fa-exchange-alt me-1"></i>เปลี่ยนสถานะ:</small>
                                     <div class="dropdown">
                                         <button class="btn btn-outline-custom btn-sm dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
                                             เลือกเพื่อเปลี่ยนสถานะ
@@ -1613,7 +1505,7 @@ const Calendar = {
                                     </div>
                                 </div>
                                 <button class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1" onclick="VehicleLogs.showEdit('${ev.id}', true)" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
-                                    <i data-lucide="pencil" style="width:12px;height:12px;"></i> แก้ไข
+                                    <i class="fas fa-edit" style="font-size: 0.9em;"></i> แก้ไข
                                 </button>
                             </div>`;
                     }
@@ -1621,20 +1513,20 @@ const Calendar = {
                     html += `
                         <div class="list-group-item bg-transparent border-bottom">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0" style="color:var(--accent-primary)">🚗 เลขทะเบียน : ${escapeHtml(ev.label)} <span class="${ev.driver === 'พนักงานขับรถลา' ? 'fw-bold' : 'fw-normal'}" style="font-size:0.85em;${ev.driver === 'พนักงานขับรถลา' ? 'color:var(--accent-danger);' : 'color:var(--text-tertiary);'}">(พนักงานขับรถ : ${escapeHtml(ev.driver || '-')})</span></h6>
+                                <h6 class="mb-0 text-primary">🚗 เลขทะเบียน : ${escapeHtml(ev.label)} <span class="${ev.driver === 'พนักงานขับรถลา' ? 'fw-bold' : 'fw-normal'}" style="font-size:0.85em;${ev.driver === 'พนักงานขับรถลา' ? 'color:#dc3545;' : 'color:var(--text-muted);'}">(พนักงานขับรถ : ${escapeHtml(ev.driver || '-')})</span></h6>
                                 <span class="badge-status badge-${statusBadgeClass}">${statusLabel}</span>
                             </div>
-                            <p class="mb-1 small" style="color: var(--color-veh-requestor, var(--text-secondary)) !important;"><i data-lucide="user" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> ผู้ขอใช้รถ : ${escapeHtml(ev.requestor || '-')} <span class="ms-2"><i data-lucide="users" style="width:12px;height:12px;display:inline;vertical-align:middle;"></i> ${escapeHtml(ev.passengerCount || 1)} คน</span></p>
+                            <p class="mb-1 small" style="color: var(--color-veh-requestor, var(--text-secondary)) !important;"><i class="fas fa-user-tag me-1"></i> ผู้ขอใช้รถ : ${escapeHtml(ev.requestor || '-')} <span class="ms-2"><i class="fas fa-users"></i> ${escapeHtml(ev.passengerCount || 1)} คน</span></p>
                             <div class="d-flex gap-3 mb-1 small">
-                                <span style="color: var(--color-veh-departure, var(--text-secondary)) !important;"><i data-lucide="clock" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> เวลาไป : ${formatTime(ev.departureTime)}</span>
-                                <span style="color: var(--color-veh-return, var(--text-secondary)) !important;"><i data-lucide="clock" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> เวลากลับ : ${formatTime(ev.returnTime)}</span>
+                                <span style="color: var(--color-veh-departure, var(--text-secondary)) !important;"><i class="fas fa-clock me-1"></i> เวลาไป : ${formatTime(ev.departureTime)}</span>
+                                <span style="color: var(--color-veh-return, var(--text-secondary)) !important;"><i class="fas fa-clock me-1"></i> เวลากลับ : ${formatTime(ev.returnTime)}</span>
                             </div>
-                            <p class="mb-1 small" style="color: var(--color-veh-destination, var(--text-secondary)) !important;"><i data-lucide="map-pin" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> สถานที่ : ${escapeHtml(ev.destination || '-')}</p>
-                            <p class="mb-0 small" style="color: var(--color-veh-purpose, var(--text-secondary)) !important;"><i data-lucide="target" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> เพื่อ : ${escapeHtml(ev.purpose || '-')}</p>
-                            ${ev.status === 'Cancelled' ? `<p class="mt-2 mb-0 p-2 rounded small" style="background: var(--accent-danger-subtle); border-left: 3px solid var(--accent-danger); color: var(--accent-danger);"><i data-lucide="x-circle" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> <strong>เหตุผลที่ยกเลิก:</strong> ${escapeHtml(ev.cancelReason || 'ไม่ระบุ')}</p>` : ''}
+                            <p class="mb-1 small" style="color: var(--color-veh-destination, var(--text-secondary)) !important;"><i class="fas fa-map-marker-alt me-1"></i> สถานที่ : ${escapeHtml(ev.destination || '-')}</p>
+                            <p class="mb-0 small" style="color: var(--color-veh-purpose, var(--text-secondary)) !important;"><i class="fas fa-bullseye me-1"></i> เพื่อ : ${escapeHtml(ev.purpose || '-')}</p>
+                            ${ev.status === 'Cancelled' ? `<p class="mt-2 mb-0 p-2 rounded small" style="background: rgba(231, 76, 60, 0.1); border-left: 3px solid var(--accent-danger); color: var(--accent-danger);"><i class="fas fa-comment-slash me-1"></i> <strong>เหตุผลที่ยกเลิก:</strong> ${escapeHtml(ev.cancelReason || 'ไม่ระบุ')}</p>` : ''}
                             ${quickStatusHtml}
-                            <hr style="border-color: var(--border-light); margin: 8px 0;">
-                            <small class="d-block text-end fst-italic" style="font-size:0.7em;color:var(--text-tertiary)"><i data-lucide="user" style="width:10px;height:10px;display:inline;vertical-align:middle;" class="me-1"></i> ผู้สร้างโพสนี้: ${escapeHtml(ev.postedBy || '-')}</small>
+                            <hr style="border-color: var(--border-color); margin: 8px 0;">
+                            <small class="text-muted d-block text-end fst-italic" style="font-size:0.7em;"><i class="fas fa-user me-1"></i> ผู้สร้างโพสนี้: ${escapeHtml(ev.postedBy || '-')}</small>
                         </div>
                     `;
                 }
@@ -1691,23 +1583,28 @@ async function uploadFile(file) {
 
 /** Show app section and update UI based on auth state */
 function showApp() {
+    // Show app section (it should be visible by default, but ensuring here)
     document.getElementById('appSection').style.display = 'flex';
 
     const user = AppState.user;
     const authLink = document.getElementById('authMenuLink');
+    const authIcon = authLink.querySelector('i');
 
     if (user) {
+        // Logged In
         document.getElementById('userDisplayName').textContent = user.name;
         document.getElementById('userDisplayRole').textContent = user.role;
         document.getElementById('userAvatar').textContent = (user.name || 'U').charAt(0);
-        document.getElementById('userAvatar').style.fontSize = '14px';
+        document.getElementById('userAvatar').innerHTML = (user.name || 'U').charAt(0); // Text avatar
 
-        // Auth button -> Logout
-        authLink.className = 'btn-ghost';
-        authLink.innerHTML = '<i data-lucide="log-out" style="width:16px;height:16px;"></i><span class="d-none d-md-inline">ออกจากระบบ</span>';
+        // Update Auth Link to Logout (Red)
+        authLink.className = 'nav-link text-danger mt-2';
+        authLink.innerHTML = '<i class="fas fa-sign-out-alt"></i> ออกจากระบบ';
 
+        // Show Admin Only Elements
         document.querySelectorAll('.admin-only').forEach(el => {
             if (AppState.isAdmin()) {
+                // Use 'flex' for elements that need flex layout (like legend-item), otherwise 'inline-block'
                 const tag = el.tagName.toLowerCase();
                 const isInline = (tag === 'span' || tag === 'a' || tag === 'button');
                 el.style.setProperty('display', isInline ? 'inline-flex' : 'flex', 'important');
@@ -1716,18 +1613,21 @@ function showApp() {
             }
         });
 
+        // Show SuperAdmin Only Elements
         document.querySelectorAll('.superadmin-only').forEach(el => {
             if (AppState.isSuperAdmin()) {
-                el.style.setProperty('display', 'flex', 'important');
+                el.style.setProperty('display', 'block', 'important');
             } else {
                 el.style.setProperty('display', 'none', 'important');
             }
         });
 
+        // Show Auth Only Elements
         document.querySelectorAll('.auth-only').forEach(el => {
-            el.style.setProperty('display', 'flex', 'important');
+            el.style.setProperty('display', 'block', 'important');
         });
 
+        // Show Settings Menu if Superadmin
         const settingsMenu = document.getElementById('settingsMenuLink');
         if (settingsMenu) {
             if (AppState.isSuperAdmin()) {
@@ -1738,33 +1638,41 @@ function showApp() {
         }
 
     } else {
+        // Guest
         document.getElementById('userDisplayName').textContent = 'ผู้เยี่ยมชม';
         document.getElementById('userDisplayRole').textContent = 'บุคคลทั่วไป';
-        document.getElementById('userAvatar').innerHTML = '<i data-lucide="user" style="width:16px;height:16px;"></i>';
-        document.getElementById('userAvatar').style.fontSize = '';
+        document.getElementById('userAvatar').innerHTML = '<i class="fas fa-user"></i>';
 
-        authLink.className = 'btn-ghost';
-        authLink.innerHTML = '<i data-lucide="log-in" style="width:16px;height:16px;"></i><span class="d-none d-md-inline">เข้าสู่ระบบ</span>';
+        // Update Auth Link to Login (Normal)
+        authLink.className = 'nav-link mt-2';
+        authLink.innerHTML = '<i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ';
 
+        // Hide Admin Only Elements
         document.querySelectorAll('.admin-only').forEach(el => {
             el.style.setProperty('display', 'none', 'important');
         });
+
+        // Hide SuperAdmin Only Elements
         document.querySelectorAll('.superadmin-only').forEach(el => {
             el.style.setProperty('display', 'none', 'important');
         });
+
+        // Hide Auth Only Elements
         document.querySelectorAll('.auth-only').forEach(el => {
             el.style.setProperty('display', 'none', 'important');
         });
 
+        // Hide Settings Menu
         const settingsMenu = document.getElementById('settingsMenuLink');
-        if (settingsMenu) settingsMenu.classList.add('d-none');
+        if (settingsMenu) {
+            settingsMenu.classList.add('d-none');
+        }
     }
 
-    // Re-init icons after DOM update
-    setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 50);
-
+    // Refresh current view if we are already viewing data
     const activePage = document.querySelector('.page-section.active-page');
     if (activePage) {
+        // If we just logged in/out, re-render the current list to show/hide action buttons
         const pageId = activePage.id.replace('page-', '');
         if (pageId === 'announcements') Announcements.render(AppState.announcements);
         if (pageId === 'vehicles') VehicleLogs.render(AppState.vehicleLogs);
@@ -1772,16 +1680,17 @@ function showApp() {
         if (pageId === 'logs') SystemLogs.load();
         if (pageId === 'dashboard') Dashboard.load();
     } else {
+        // Default to calendar
         navigateTo('calendar');
     }
 }
 
 /** Navigate between pages */
 function navigateTo(page) {
-    // Update nav links (both desktop and mobile)
-    document.querySelectorAll('.topbar-nav-item').forEach(el => el.classList.remove('active'));
-    const activeLinks = document.querySelectorAll(`[data-page="${page}"]`);
-    activeLinks.forEach(el => el.classList.add('active'));
+    // Update nav links
+    document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+    const activeLink = document.querySelector(`[data-page="${page}"]`);
+    if (activeLink) activeLink.classList.add('active');
 
     // Show target page
     document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active-page'));
@@ -1807,24 +1716,22 @@ function navigateTo(page) {
             break;
     }
 
-    // Close mobile nav
-    const mobileNav = document.getElementById('mobileNav');
-    if (mobileNav) mobileNav.classList.remove('show');
+    // Close sidebar on mobile
+    document.querySelector('.sidebar')?.classList.remove('show');
 }
 
-/** Toggle mobile navigation drawer */
-function toggleMobileNav() {
-    const mobileNav = document.getElementById('mobileNav');
-    if (mobileNav) mobileNav.classList.toggle('show');
+/** Toggle sidebar on mobile */
+function toggleSidebar() {
+    document.querySelector('.sidebar')?.classList.toggle('show');
 }
 
 /** Show toast notification */
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
-    const iconMap = { success: 'check-circle', error: 'alert-circle', info: 'info' };
+    const iconMap = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
     const toast = document.createElement('div');
     toast.className = `toast-custom ${type}`;
-    toast.innerHTML = `<i data-lucide="${iconMap[type] || iconMap.info}" style="width:18px;height:18px;flex-shrink:0;"></i><span>${message}</span>`;
+    toast.innerHTML = `<i class="fas ${iconMap[type] || iconMap.info}"></i><span>${message}</span>`;
     container.appendChild(toast);
     setTimeout(() => {
         toast.style.opacity = '0';
@@ -1848,7 +1755,7 @@ function loadingHTML() {
 
 /** Empty state HTML */
 function emptyHTML(message) {
-    return `<div class="empty-state"><i data-lucide="inbox" style="width:48px;height:48px;"></i><p>${message}</p></div>`;
+    return `<div class="empty-state"><i class="fas fa-inbox"></i><p>${message}</p></div>`;
 }
 
 /** Escape HTML special characters */
@@ -1964,7 +1871,45 @@ function formatTime(timeVal) {
     return timeVal;
 }
 
-// Theme removed — single light theme only
+// ============================================================
+// 🌓 THEME MODULE
+// ============================================================
+const ThemeModule = {
+    init() {
+        const savedTheme = localStorage.getItem('oms-theme');
+        // If no saved theme, default to 'light' (which is default in CSS, so NO data-theme attribute)
+        // If saved is 'dark', apply it.
+        if (savedTheme === 'dark') {
+            this.apply('dark');
+        } else {
+            this.apply('light');
+        }
+    },
+
+    toggle() {
+        const current = document.documentElement.getAttribute('data-theme');
+        const target = current === 'dark' ? 'light' : 'dark';
+        this.apply(target);
+    },
+
+    apply(theme) {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            const checkbox = document.getElementById('checkbox');
+            if (checkbox) checkbox.checked = true;
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            const checkbox = document.getElementById('checkbox');
+            if (checkbox) checkbox.checked = false;
+        }
+        localStorage.setItem('oms-theme', theme);
+    }
+};
+
+/** Global toggle function */
+function toggleTheme() {
+    ThemeModule.toggle();
+}
 
 // ============================================================
 // 📊 DASHBOARD MODULE
@@ -2018,7 +1963,7 @@ const Dashboard = {
                 labels: labels,
                 datasets: [{
                     data: data,
-                    backgroundColor: ['#d97757', '#5a7d6a', '#c9a96e', '#5a7d9a', '#c45c5c', '#8a7d6a'],
+                    backgroundColor: ['#6c63ff', '#ff6b9d', '#2ecc71', '#f39c12', '#3498db', '#9b59b6'],
                     borderWidth: 0
                 }]
             },
@@ -2027,7 +1972,7 @@ const Dashboard = {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'right', labels: { font: { family: 'Inter' }, color: 'var(--text-primary)' } }
+                    legend: { position: 'right', labels: { font: { family: 'Prompt' }, color: 'var(--text-primary)' } }
                 }
             }
         });
@@ -2058,8 +2003,8 @@ const Dashboard = {
                 datasets: [{
                     label: 'จำนวนงาน',
                     data: data,
-                    backgroundColor: '#d97757',
-                    borderRadius: 6
+                    backgroundColor: '#6c63ff',
+                    borderRadius: 4
                 }]
             },
             options: {
@@ -2070,8 +2015,8 @@ const Dashboard = {
                     legend: { display: false }
                 },
                 scales: {
-                    y: { beginAtZero: true, ticks: { font: { family: 'Inter' }, color: 'var(--text-secondary)' } },
-                    x: { ticks: { font: { family: 'Inter' }, color: 'var(--text-secondary)' } }
+                    y: { beginAtZero: true, ticks: { font: { family: 'Prompt' }, color: 'var(--text-secondary)' } },
+                    x: { ticks: { font: { family: 'Prompt' }, color: 'var(--text-secondary)' } }
                 }
             }
         });
@@ -2102,21 +2047,21 @@ const Dashboard = {
                 datasets: [{
                     label: 'จำนวนการขอใช้รถ',
                     data: data,
-                    backgroundColor: '#5a7d6a',
-                    borderRadius: 6
+                    backgroundColor: '#2ecc71',
+                    borderRadius: 4
                 }]
             },
             options: {
                 animation: false,
                 responsive: true,
                 maintainAspectRatio: false,
-                indexAxis: 'y',
+                indexAxis: 'y', // Make it horizontal for better name readability
                 plugins: {
                     legend: { display: false }
                 },
                 scales: {
-                    x: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Inter' }, color: 'var(--text-secondary)' } },
-                    y: { ticks: { font: { family: 'Inter' }, color: 'var(--text-secondary)' } }
+                    x: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Prompt' }, color: 'var(--text-secondary)' } },
+                    y: { ticks: { font: { family: 'Prompt' }, color: 'var(--text-secondary)' } }
                 }
             }
         });
@@ -2167,16 +2112,16 @@ const Dashboard = {
                     {
                         label: 'การปฏิบัติงาน',
                         data: annData,
-                        borderColor: '#d97757',
-                        backgroundColor: 'rgba(217, 119, 87, 0.1)',
+                        borderColor: '#6c63ff',
+                        backgroundColor: 'rgba(108, 99, 255, 0.1)',
                         fill: true,
                         tension: 0.4
                     },
                     {
                         label: 'การใช้รถราชการ',
                         data: vehData,
-                        borderColor: '#5a7d6a',
-                        backgroundColor: 'rgba(90, 125, 106, 0.1)',
+                        borderColor: '#2ecc71',
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
                         fill: true,
                         tension: 0.4
                     }
@@ -2187,11 +2132,11 @@ const Dashboard = {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'top', labels: { font: { family: 'Inter' }, color: 'var(--text-primary)' } }
+                    legend: { position: 'top', labels: { font: { family: 'Prompt' }, color: 'var(--text-primary)' } }
                 },
                 scales: {
-                    y: { beginAtZero: true, ticks: { font: { family: 'Inter' }, color: 'var(--text-secondary)' } },
-                    x: { ticks: { font: { family: 'Inter' }, color: 'var(--text-secondary)' } }
+                    y: { beginAtZero: true, ticks: { font: { family: 'Prompt' }, color: 'var(--text-secondary)' } },
+                    x: { ticks: { font: { family: 'Prompt' }, color: 'var(--text-secondary)' } }
                 }
             }
         });
@@ -2337,10 +2282,10 @@ const SystemLogs = {
             const dateDisplay = isNaN(dateObj.getTime()) ? escapeHtml(item.Timestamp) :
                 formatThaiDate(item.Timestamp) + ' ' + dateObj.toLocaleTimeString('th-TH');
 
-            let actionColor = 'var(--text-secondary)';
-            if (item.Action === 'Add') actionColor = 'var(--accent-secondary)';
-            else if (item.Action === 'Update') actionColor = 'var(--accent-tertiary)';
-            else if (item.Action === 'Delete') actionColor = 'var(--accent-danger)';
+            let actionColor = 'var(--text-color)';
+            if (item.Action === 'Add') actionColor = '#28a745';
+            else if (item.Action === 'Update') actionColor = '#ffc107';
+            else if (item.Action === 'Delete') actionColor = '#dc3545';
 
             return `
       <tr class="fade-in" style="animation-delay: ${Math.min(index * 0.02, 0.5)}s">
