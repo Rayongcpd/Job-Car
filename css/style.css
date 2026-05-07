@@ -995,14 +995,12 @@ body {
 .legend-dot.cancelled { background: var(--accent-danger); }
 
 .calendar-container-scroll {
-    overflow-x: auto;
     width: 100%;
 }
 
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    min-width: var(--calendar-min-width, 100%);
     width: 100%;
     padding: var(--space-2);
 }
