@@ -1017,7 +1017,7 @@ body {
 .calendar-day-name:first-child { color: var(--accent-danger); }
 
 .calendar-day {
-    min-height: var(--calendar-cell-min-height, 110px);
+    min-height: clamp(60px, calc((100vh - 440px) / 6), 140px);
     border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
     margin: 2px;
