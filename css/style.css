@@ -2,7 +2,7 @@
    CPD-RAYONG | Office Management System — Claude Design System
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Sarabun:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kanit:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
 
 :root {
     /* === Base === */
@@ -70,8 +70,8 @@
     --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 
     /* === Font Family === */
-    --font-heading: 'Instrument Serif', 'Georgia', serif;
-    --font-body: 'Inter', 'Sarabun', sans-serif;
+    --font-heading: 'Kanit', 'Inter', sans-serif;
+    --font-body: 'Inter', 'Noto Sans Thai', sans-serif;
     --font-mono: 'SF Mono', 'Monaco', monospace;
 
     /* === Type Scale === */
@@ -171,7 +171,7 @@ body {
     color: var(--text-primary) !important;
     border-radius: var(--radius-md) !important;
     padding: 14px 16px !important;
-    font-family: 'Inter', 'Sarabun', sans-serif !important;
+    font-family: 'Inter', 'Noto Sans Thai', sans-serif !important;
     font-size: 14px !important;
     transition: var(--transition-base) !important;
 }
@@ -207,7 +207,7 @@ body {
 
 .form-floating label {
     color: var(--text-tertiary) !important;
-    font-family: 'Inter', 'Sarabun', sans-serif !important;
+    font-family: 'Inter', 'Noto Sans Thai', sans-serif !important;
     font-size: 14px !important;
 }
 
@@ -1326,7 +1326,7 @@ body {
         max-width: 210mm;
         margin: 0 auto;
         padding: 20mm;
-        font-family: 'Sarabun', 'Inter', sans-serif;
+        font-family: 'Inter', 'Noto Sans Thai', sans-serif;
     }
 
     .print-form-header {
