@@ -81,7 +81,11 @@ const AppState = {
                 if (Calendar.lastOpenedGroup) {
                     // Small delay to ensure the DOM and Bootstrap state are ready for a new modal
                     setTimeout(() => {
-                        Calendar.showGroup(Calendar.lastOpenedGroup.dateStr, Calendar.lastOpenedGroup.type);
+                        if (Calendar.lastOpenedGroup.type === 'vehicleDay') {
+                            Calendar.showDayVehicle(Calendar.lastOpenedGroup.dateStr);
+                        } else {
+                            Calendar.showGroup(Calendar.lastOpenedGroup.dateStr, Calendar.lastOpenedGroup.type);
+                        }
                     }, 100);
                 }
             }
@@ -1412,33 +1416,33 @@ const Calendar = {
 
             if (newsEvents.length > 0) {
                 for (let i = 0; i < Math.min(newsEvents.length, 3); i++) {
-                    dotsHtml += `<span class="calendar-event-dot announcement" onclick="Calendar.showGroup('${dateStr}', 'announcement')" title="ดูการปฏิบัติงาน"></span>`;
+                    dotsHtml += `<span class="calendar-event-dot announcement" title="การปฏิบัติงาน"></span>`;
                 }
                 if (newsEvents.length > 3) {
-                    countsHtml += `<span class="calendar-event-count announcement" onclick="Calendar.showGroup('${dateStr}', 'announcement')">+${newsEvents.length}</span>`;
+                    countsHtml += `<span class="calendar-event-count announcement">+${newsEvents.length}</span>`;
                 }
             }
             if (vehicleEvents.length > 0) {
                 for (let i = 0; i < Math.min(vehicleEvents.length, 3); i++) {
-                    dotsHtml += `<span class="calendar-event-dot vehicle" onclick="Calendar.showGroup('${dateStr}', 'vehicle')" title="ดูบันทึกการใช้รถ"></span>`;
+                    dotsHtml += `<span class="calendar-event-dot vehicle" title="บันทึกการใช้รถ"></span>`;
                 }
                 if (vehicleEvents.length > 3) {
-                    countsHtml += `<span class="calendar-event-count vehicle" onclick="Calendar.showGroup('${dateStr}', 'vehicle')">+${vehicleEvents.length}</span>`;
+                    countsHtml += `<span class="calendar-event-count vehicle">+${vehicleEvents.length}</span>`;
                 }
             }
             if (prebookEvents.length > 0) {
                 for (let i = 0; i < Math.min(prebookEvents.length, 2); i++) {
-                    dotsHtml += `<span class="calendar-event-dot prebook" onclick="Calendar.showGroup('${dateStr}', 'prebook')" title="ดู Prebook (รอนุมัติ)"></span>`;
+                    dotsHtml += `<span class="calendar-event-dot prebook" title="Prebook (รอนุมัติ)"></span>`;
                 }
             }
             if (cancelledEvents.length > 0) {
                 for (let i = 0; i < Math.min(cancelledEvents.length, 2); i++) {
-                    dotsHtml += `<span class="calendar-event-dot cancelled" onclick="Calendar.showGroup('${dateStr}', 'cancelled')" title="ดูรายการที่ยกเลิก"></span>`;
+                    dotsHtml += `<span class="calendar-event-dot cancelled" title="รายการที่ยกเลิก"></span>`;
                 }
             }
             dotsHtml += '</div>';
 
-            html += `<div class="calendar-day${isToday ? ' today' : ''}">
+            html += `<div class="calendar-day${isToday ? ' today' : ''}" onclick="Calendar.showDayVehicle('${dateStr}')" style="cursor:pointer;">
                 <div class="day-number">${d}</div>
                 ${dotsHtml}
                 ${countsHtml}
@@ -1603,6 +1607,107 @@ const Calendar = {
                         </div>
                     `;
                 }
+            });
+        }
+        html += '</div>';
+
+        document.getElementById('detailModalTitle').textContent = modalTitle;
+        document.getElementById('detailModalBody').innerHTML = html;
+        new bootstrap.Modal(document.getElementById('detailModal')).show();
+    },
+
+    /** Show all vehicle-related events for a day in modal */
+    showDayVehicle(dateStr) {
+        if (event) event.stopPropagation();
+
+        this.lastOpenedGroup = { dateStr, type: 'vehicleDay' };
+
+        const [yyyy, mm, dd] = dateStr.split('-');
+        const thaiYear = parseInt(yyyy) + 543;
+        const thaiMonth = Calendar.THAI_MONTHS[parseInt(mm) - 1];
+        const thaiDate = `วันที่ ${parseInt(dd)} ${thaiMonth} ${thaiYear}`;
+
+        const modalTitle = `${thaiDate} - บันทึกการใช้รถ`;
+
+        const vehicleTypes = ['vehicle', 'prebook', 'cancelled'];
+        const groupEvents = this.events.filter(ev => ev.date === dateStr && vehicleTypes.includes(ev.type));
+
+        let html = '<div class="list-group list-group-flush">';
+        if (groupEvents.length === 0) {
+            html += '<div class="p-3 text-center" style="color:var(--text-tertiary)">ไม่มีบันทึกการใช้รถในวันนี้</div>';
+        } else {
+            groupEvents.forEach(ev => {
+                const isAdminView = AppState.isAdmin();
+                const currentStatus = ev.status || '';
+                const statusBadgeClass = currentStatus.toLowerCase() === 'pending' ? 'prebook' : currentStatus.toLowerCase();
+                const statusLabel = currentStatus === 'Pending' ? 'Prebook (รอดำเนินการ)' : escapeHtml(currentStatus);
+
+                const allStatuses = [
+                    { value: 'Pending',   label: 'Pending (รอดำเนินการ)',  cls: 'btn-warning' },
+                    { value: 'Approved',  label: 'Approved (อนุมัติ)',     cls: 'btn-success' },
+                    { value: 'Completed', label: 'Completed (เสร็จสิ้น)', cls: 'btn-info' },
+                    { value: 'Cancelled', label: 'Cancelled (ยกเลิก)',     cls: 'btn-danger' },
+                ];
+
+                let quickStatusHtml = '';
+                if (isAdminView) {
+                    const evData = {
+                        id: ev.id,
+                        date: ev.date,
+                        label: ev.label,
+                        purpose: ev.purpose,
+                        destination: ev.destination,
+                        requestor: ev.requestor,
+                        passengerCount: ev.passengerCount,
+                        departureTime: ev.departureTime,
+                        returnTime: ev.returnTime,
+                        driver: ev.driver
+                    };
+                    const evB64 = btoa(encodeURIComponent(JSON.stringify(evData)));
+                    
+                    const items = allStatuses
+                        .filter(s => s.value !== currentStatus)
+                        .map(s => `<li><button class="dropdown-item d-flex align-items-center gap-2 py-2" onclick="VehicleLogs.quickUpdateStatus('${evB64}', '${s.value}')"><span class="status-indicator-dot bg-${s.value.toLowerCase()}"></span>${s.label}</button></li>`)
+                        .join('');
+
+                    quickStatusHtml = `
+                        <div class="mt-2 d-flex align-items-center justify-content-between gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <small style="font-size:0.72em;color:var(--text-tertiary)"><i data-lucide="refresh-cw" style="width:10px;height:10px;display:inline;vertical-align:middle;" class="me-1"></i>เปลี่ยนสถานะ:</small>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-custom btn-sm dropdown-toggle px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
+                                        เลือกเพื่อเปลี่ยนสถานะ
+                                    </button>
+                                    <ul class="dropdown-menu shadow-sm border-0 mt-1" style="font-size:0.85em; border-radius: 12px; overflow: hidden;">
+                                        ${items}
+                                    </ul>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary btn-sm px-3 d-flex align-items-center gap-1" onclick="VehicleLogs.showEdit('${ev.id}', true)" style="font-size:0.75em; padding: 3px 12px; border-radius: 20px;">
+                                <i data-lucide="pencil" style="width:12px;height:12px;"></i> แก้ไข
+                            </button>
+                        </div>`;
+                }
+
+                html += `
+                    <div class="list-group-item bg-transparent border-bottom">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0" style="color:var(--accent-primary)">🚗 เลขทะเบียน : ${escapeHtml(ev.label)} <span class="${ev.driver === 'พนักงานขับรถลา' ? 'fw-bold' : 'fw-normal'}" style="font-size:0.85em;${ev.driver === 'พนักงานขับรถลา' ? 'color:var(--accent-danger);' : 'color:var(--text-tertiary);'}">(พนักงานขับรถ : ${escapeHtml(ev.driver || '-')})</span></h6>
+                            <span class="badge-status badge-${statusBadgeClass}">${statusLabel}</span>
+                        </div>
+                        <p class="mb-1 small" style="color: var(--color-veh-requestor, var(--text-secondary)) !important;"><i data-lucide="user" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> ผู้ขอใช้รถ : ${escapeHtml(ev.requestor || '-')} <span class="ms-2"><i data-lucide="users" style="width:12px;height:12px;display:inline;vertical-align:middle;"></i> ${escapeHtml(ev.passengerCount || 1)} คน</span></p>
+                        <div class="d-flex gap-3 mb-1 small">
+                            <span style="color: var(--color-veh-departure, var(--text-secondary)) !important;"><i data-lucide="clock" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> เวลาไป : ${formatTime(ev.departureTime)}</span>
+                            <span style="color: var(--color-veh-return, var(--text-secondary)) !important;"><i data-lucide="clock" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> เวลากลับ : ${formatTime(ev.returnTime)}</span>
+                        </div>
+                        <p class="mb-1 small" style="color: var(--color-veh-destination, var(--text-secondary)) !important;"><i data-lucide="map-pin" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> สถานที่ : ${escapeHtml(ev.destination || '-')}</p>
+                        <p class="mb-0 small" style="color: var(--color-veh-purpose, var(--text-secondary)) !important;"><i data-lucide="target" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> เพื่อ : ${escapeHtml(ev.purpose || '-')}</p>
+                        ${ev.status === 'Cancelled' ? `<p class="mt-2 mb-0 p-2 rounded small" style="background: var(--accent-danger-subtle); border-left: 3px solid var(--accent-danger); color: var(--accent-danger);"><i data-lucide="x-circle" style="width:12px;height:12px;display:inline;vertical-align:middle;" class="me-1"></i> <strong>เหตุผลที่ยกเลิก:</strong> ${escapeHtml(ev.cancelReason || 'ไม่ระบุ')}</p>` : ''}
+                        ${quickStatusHtml}
+                        <hr style="border-color: var(--border-light); margin: 8px 0;">
+                        <small class="d-block text-end fst-italic" style="font-size:0.7em;color:var(--text-tertiary)"><i data-lucide="user" style="width:10px;height:10px;display:inline;vertical-align:middle;" class="me-1"></i> ผู้สร้างโพสนี้: ${escapeHtml(ev.postedBy || '-')}</small>
+                    </div>
+                `;
             });
         }
         html += '</div>';
