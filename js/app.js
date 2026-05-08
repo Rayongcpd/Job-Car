@@ -1478,42 +1478,46 @@ const Calendar = {
         this.showGroup(this.currentDate.toISOString().split('T')[0], type);
     },
 
-    /** Show day detail panel below calendar */
+    /** Show day detail in modal popup */
     showDayDetail(dateStr) {
         if (event) event.stopPropagation();
-        const panel = document.getElementById('dayDetailPanel');
-        const content = document.getElementById('dayDetailContent');
-        const title = document.getElementById('dayDetailTitle');
 
         const [yyyy, mm, dd] = dateStr.split('-');
         const thaiYear = parseInt(yyyy) + 543;
         const thaiMonth = Calendar.THAI_MONTHS[parseInt(mm) - 1];
-        title.textContent = `รายการในวันที่ ${parseInt(dd)} ${thaiMonth} ${thaiYear}`;
+        const modalTitle = `รายการในวันที่ ${parseInt(dd)} ${thaiMonth} ${thaiYear}`;
 
         const dayEvents = this.events.filter(ev => ev.date === dateStr);
+
+        let html = '<div class="list-group list-group-flush">';
         if (dayEvents.length === 0) {
-            content.innerHTML = '<div class="day-detail-empty">ไม่มีรายการในวันนี้</div>';
+            html += '<div class="p-3 text-center" style="color:var(--text-tertiary)">ไม่มีรายการในวันนี้</div>';
         } else {
-            content.innerHTML = dayEvents.map(ev => {
+            dayEvents.forEach(ev => {
                 const dotClass = ev.type === 'announcement' ? 'announcement' : ev.type === 'vehicle' ? 'vehicle' : ev.type === 'prebook' ? 'prebook' : 'cancelled';
                 const typeLabel = ev.type === 'announcement' ? 'การปฏิบัติงาน' : ev.type === 'vehicle' ? 'บันทึกการใช้รถ' : ev.type === 'prebook' ? 'Prebook' : 'รายการที่ยกเลิก';
                 const timeStr = ev.time ? formatTime(ev.time) : (ev.departureTime ? formatTime(ev.departureTime) : '');
                 const isVehicle = ev.type === 'vehicle' || ev.type === 'prebook' || ev.type === 'cancelled';
                 const vehicleMeta = isVehicle ? `<br>ผู้ขอใช้รถ: ${escapeHtml(ev.requestor || '-')} · ${ev.passengerCount || 1} คน` : '';
-                return `
-                    <div class="day-detail-item">
-                        <div class="day-detail-dot ${dotClass}"></div>
-                        <div class="day-detail-content">
-                            <div class="day-detail-time">${typeLabel}${timeStr ? ' · ' + timeStr : ''}</div>
-                            <div class="day-detail-title">${escapeHtml(ev.label)}</div>
-                            <div class="day-detail-meta">${escapeHtml(ev.location || ev.destination || ev.purpose || '-')}${vehicleMeta}</div>
+                html += `
+                    <div class="list-group-item bg-transparent border-bottom">
+                        <div class="d-flex align-items-start gap-2">
+                            <span class="calendar-event-dot ${dotClass}" style="margin-top:6px;flex-shrink:0;"></span>
+                            <div>
+                                <div class="small" style="color:var(--text-tertiary)">${typeLabel}${timeStr ? ' · ' + timeStr : ''}</div>
+                                <div style="color:var(--accent-primary);font-weight:500;">${escapeHtml(ev.label)}</div>
+                                <div class="small" style="color:var(--text-secondary)">${escapeHtml(ev.location || ev.destination || ev.purpose || '-')}${vehicleMeta}</div>
+                            </div>
                         </div>
                     </div>
                 `;
-            }).join('');
+            });
         }
-        panel.style.display = 'block';
-        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        html += '</div>';
+
+        document.getElementById('detailModalTitle').textContent = modalTitle;
+        document.getElementById('detailModalBody').innerHTML = html;
+        new bootstrap.Modal(document.getElementById('detailModal')).show();
     },
 
     /** Show grouped events in modal */
