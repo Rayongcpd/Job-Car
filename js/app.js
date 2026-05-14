@@ -1416,28 +1416,28 @@ const Calendar = {
 
             if (newsEvents.length > 0) {
                 for (let i = 0; i < Math.min(newsEvents.length, 3); i++) {
-                    dotsHtml += `<span class="calendar-event-dot announcement" title="การปฏิบัติงาน"></span>`;
+                    dotsHtml += `<span class="calendar-event-dot announcement" onclick="Calendar.showGroup('${dateStr}', 'announcement')" title="การปฏิบัติงาน"></span>`;
                 }
                 if (newsEvents.length > 3) {
-                    countsHtml += `<span class="calendar-event-count announcement">+${newsEvents.length}</span>`;
+                    countsHtml += `<span class="calendar-event-count announcement" onclick="Calendar.showGroup('${dateStr}', 'announcement')">+${newsEvents.length}</span>`;
                 }
             }
             if (vehicleEvents.length > 0) {
                 for (let i = 0; i < Math.min(vehicleEvents.length, 3); i++) {
-                    dotsHtml += `<span class="calendar-event-dot vehicle" title="บันทึกการใช้รถ"></span>`;
+                    dotsHtml += `<span class="calendar-event-dot vehicle" onclick="Calendar.showGroup('${dateStr}', 'vehicle')" title="บันทึกการใช้รถ"></span>`;
                 }
                 if (vehicleEvents.length > 3) {
-                    countsHtml += `<span class="calendar-event-count vehicle">+${vehicleEvents.length}</span>`;
+                    countsHtml += `<span class="calendar-event-count vehicle" onclick="Calendar.showGroup('${dateStr}', 'vehicle')">+${vehicleEvents.length}</span>`;
                 }
             }
             if (prebookEvents.length > 0) {
                 for (let i = 0; i < Math.min(prebookEvents.length, 2); i++) {
-                    dotsHtml += `<span class="calendar-event-dot prebook" title="Prebook (รอนุมัติ)"></span>`;
+                    dotsHtml += `<span class="calendar-event-dot prebook" onclick="Calendar.showGroup('${dateStr}', 'prebook')" title="Prebook (รอนุมัติ)"></span>`;
                 }
             }
             if (cancelledEvents.length > 0) {
                 for (let i = 0; i < Math.min(cancelledEvents.length, 2); i++) {
-                    dotsHtml += `<span class="calendar-event-dot cancelled" title="รายการที่ยกเลิก"></span>`;
+                    dotsHtml += `<span class="calendar-event-dot cancelled" onclick="Calendar.showGroup('${dateStr}', 'cancelled')" title="รายการที่ยกเลิก"></span>`;
                 }
             }
             dotsHtml += '</div>';
