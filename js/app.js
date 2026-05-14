@@ -2376,32 +2376,47 @@ const ExportUtils = {
 // 📋 SYSTEM LOGS MODULE
 // ============================================================
 const SystemLogs = {
+    logs: [],
+    currentPage: 1,
+    pageSize: 15,
+
     /** Fetch and render all system logs */
     async load() {
         if (!AppState.isSuperAdmin()) return;
 
         const container = document.getElementById('logsTableBody');
         container.innerHTML = loadingHTML();
+        
+        // Reset pagination
+        this.currentPage = 1;
 
         const result = await API.get({ action: 'getLogs', username: AppState.user.username, password: AppState.user.password });
 
         if (result.success) {
-            this.render(result.data);
+            this.logs = result.data || [];
+            this.render(1);
         } else {
             container.innerHTML = emptyHTML(result.error || 'ไม่สามารถโหลดข้อมูลบันทึกระบบได้');
+            this.updatePagination(0);
         }
     },
 
-    /** Render logs table */
-    render(data) {
+    /** Render current page of logs */
+    render(page = 1) {
+        this.currentPage = page;
         const container = document.getElementById('logsTableBody');
-
-        if (!data || data.length === 0) {
+        
+        if (!this.logs || this.logs.length === 0) {
             container.innerHTML = `<tr><td colspan="5">${emptyHTML('ยังไม่มีบันทึกข้อมูล')}</td></tr>`;
+            this.updatePagination(0);
             return;
         }
 
-        container.innerHTML = data.map((item, index) => {
+        const start = (page - 1) * this.pageSize;
+        const end = start + this.pageSize;
+        const pageData = this.logs.slice(start, end);
+
+        container.innerHTML = pageData.map((item, index) => {
             const dateObj = new Date(item.Timestamp);
             // Format to basic Thai display with time
             const dateDisplay = isNaN(dateObj.getTime()) ? escapeHtml(item.Timestamp) :
@@ -2413,14 +2428,69 @@ const SystemLogs = {
             else if (item.Action === 'Delete') actionColor = 'var(--accent-danger)';
 
             return `
-      <tr class="fade-in" style="animation-delay: ${Math.min(index * 0.02, 0.5)}s">
-        <td data-label="วันที่/เวลา" style="white-space: nowrap;">${dateDisplay}</td>
-        <td data-label="ผู้ใช้งาน"><strong>${escapeHtml(item.Username || '-')}</strong></td>
-        <td data-label="การกระทำ"><span style="color: ${actionColor}; font-weight: bold;">${escapeHtml(item.Action || '-')}</span></td>
-        <td data-label="ส่วนงาน">${escapeHtml(item.Module || '-')}</td>
-        <td data-label="รายละเอียด" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.Detail || '-')}</td>
-      </tr>
-    `;
+              <tr class="fade-in" style="animation-delay: ${Math.min(index * 0.02, 0.5)}s">
+                <td data-label="วันที่/เวลา" style="white-space: nowrap;">${dateDisplay}</td>
+                <td data-label="ผู้ใช้งาน"><strong>${escapeHtml(item.Username || '-')}</strong></td>
+                <td data-label="การกระทำ"><span style="color: ${actionColor}; font-weight: bold;">${escapeHtml(item.Action || '-')}</span></td>
+                <td data-label="ส่วนงาน">${escapeHtml(item.Module || '-')}</td>
+                <td data-label="รายละเอียด" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.Detail || '-')}</td>
+              </tr>
+            `;
         }).join('');
+
+        this.updatePagination(this.logs.length);
+        if (window.lucide) lucide.createIcons();
+    },
+
+    /** Update pagination UI */
+    updatePagination(totalItems) {
+        const totalPages = Math.ceil(totalItems / this.pageSize);
+        const start = totalItems === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1;
+        const end = Math.min(this.currentPage * this.pageSize, totalItems);
+
+        // Update info text
+        const infoEl = document.getElementById('logsPaginationInfo');
+        if (infoEl) {
+            infoEl.textContent = `กำลังแสดง ${start} ถึง ${end} จาก ${totalItems} รายการ`;
+        }
+
+        const paginationList = document.getElementById('logsPaginationList');
+        if (!paginationList) return;
+
+        let html = '';
+
+        // Previous button
+        html += `<li class="page-item ${this.currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="javascript:void(0)" onclick="SystemLogs.goToPage(${this.currentPage - 1})"><i data-lucide="chevron-left" style="width:14px;height:14px;"></i></a>
+        </li>`;
+
+        // Page numbers
+        const range = 2;
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= this.currentPage - range && i <= this.currentPage + range)) {
+                html += `<li class="page-item ${i === this.currentPage ? 'active' : ''}">
+                    <a class="page-link" href="javascript:void(0)" onclick="SystemLogs.goToPage(${i})">${i}</a>
+                </li>`;
+            } else if (i === this.currentPage - range - 1 || i === this.currentPage + range + 1) {
+                html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            }
+        }
+
+        // Next button
+        html += `<li class="page-item ${this.currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}">
+            <a class="page-link" href="javascript:void(0)" onclick="SystemLogs.goToPage(${this.currentPage + 1})"><i data-lucide="chevron-right" style="width:14px;height:14px;"></i></a>
+        </li>`;
+
+        paginationList.innerHTML = html;
+        if (window.lucide) lucide.createIcons();
+    },
+
+    goToPage(page) {
+        const totalPages = Math.ceil(this.logs.length / this.pageSize);
+        if (page < 1 || page > totalPages) return;
+        this.render(page);
+        // Scroll to top of section
+        const section = document.getElementById('page-logs');
+        if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 };
