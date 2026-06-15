@@ -89,6 +89,76 @@
     --color-vehicle: #5a7d6a;
 }
 
+/* ============ DARK THEME ============ */
+[data-theme="dark"] {
+    /* === Base === */
+    --bg-base: #0f0f11;
+    --bg-elevated: #18181b;
+    --bg-subtle: #242427;
+    --bg-inset: #111113;
+
+    /* === Text === */
+    --text-primary: #f4f4f5;
+    --text-secondary: #a1a1aa;
+    --text-tertiary: #71717a;
+    --text-inverse: #ffffff;
+
+    /* === Accent === */
+    --accent-primary: #e58768;
+    --accent-primary-hover: #d97757;
+    --accent-primary-subtle: rgba(229, 135, 104, 0.12);
+
+    --accent-secondary: #6ea389;
+    --accent-secondary-hover: #5a7d6a;
+    --accent-secondary-subtle: rgba(110, 163, 137, 0.12);
+
+    --accent-tertiary: #dbba7d;
+    --accent-tertiary-subtle: rgba(219, 186, 125, 0.12);
+
+    --accent-danger: #e06d6d;
+    --accent-danger-hover: #c45c5c;
+    --accent-danger-subtle: rgba(224, 109, 109, 0.12);
+
+    --accent-info: #6ea2c7;
+    --accent-info-subtle: rgba(110, 162, 199, 0.12);
+
+    /* === Border === */
+    --border-light: rgba(255, 255, 255, 0.08);
+    --border-medium: rgba(255, 255, 255, 0.15);
+    --border-focus: #e58768;
+
+    /* === Shadow === */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] .btn-close {
+    filter: invert(1) grayscale(1) brightness(2);
+}
+
+[data-theme="dark"] .table {
+    --bs-table-hover-bg: var(--accent-primary-subtle);
+}
+
+[data-theme="dark"] input:-webkit-autofill {
+    -webkit-text-fill-color: var(--text-primary) !important;
+    -webkit-box-shadow: 0 0 0px 1000px var(--bg-elevated) inset !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+[data-theme="dark"] .calendar-day:hover {
+    background: var(--bg-subtle) !important;
+    border-color: var(--border-medium) !important;
+}
+
+[data-theme="dark"] .calendar-day.today {
+    background: var(--accent-primary-subtle) !important;
+    border-color: var(--accent-primary) !important;
+}
+
+
 * {
     margin: 0;
     padding: 0;

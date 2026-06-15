@@ -53,6 +53,9 @@ const AppState = {
 
     /** Initialize App */
     async init() {
+        // Initialize Theme Module immediately to prevent flash of light theme
+        ThemeModule.init();
+
         this.loadUser();
 
         // Load settings configuration
@@ -2200,13 +2203,69 @@ function formatTime(timeVal) {
     return timeVal;
 }
 
-// Theme removed — single light theme only
+// ============================================================
+// 🌓 THEME MODULE
+// ============================================================
+const ThemeModule = {
+    init() {
+        const savedTheme = localStorage.getItem('oms-theme');
+        // Default to 'light' if not saved
+        if (savedTheme === 'dark') {
+            this.apply('dark');
+        } else {
+            this.apply('light');
+        }
+    },
+
+    toggle() {
+        const current = document.documentElement.getAttribute('data-theme');
+        const target = current === 'dark' ? 'light' : 'dark';
+        this.apply(target);
+        
+        // If Dashboard is currently visible, reload to update Chart.js colors
+        const activePage = document.querySelector('.page-section.active-page');
+        if (activePage && activePage.id === 'page-dashboard') {
+            Dashboard.load();
+        }
+    },
+
+    apply(theme) {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+        
+        // Save to localStorage
+        localStorage.setItem('oms-theme', theme);
+
+        // Update toggle button icon
+        const btn = document.getElementById('themeToggleBtn');
+        if (btn) {
+            const isDark = theme === 'dark';
+            btn.innerHTML = `<i data-lucide="${isDark ? 'sun' : 'moon'}" style="width:16px;height:16px;" id="themeToggleIcon"></i>`;
+            btn.title = isDark ? 'เปลี่ยนเป็นโหมดสว่าง (Light Mode)' : 'เปลี่ยนเป็นโหมดมืด (Dark Mode)';
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+    }
+};
+
+/** Global toggle theme function */
+function toggleTheme() {
+    ThemeModule.toggle();
+}
 
 // ============================================================
 // 📊 DASHBOARD MODULE
 // ============================================================
 const Dashboard = {
     charts: {},
+
+    getCSSVar(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#000000';
+    },
 
     load() {
         if (!AppState.isAdmin()) return;
@@ -2254,7 +2313,14 @@ const Dashboard = {
                 labels: labels,
                 datasets: [{
                     data: data,
-                    backgroundColor: ['#d97757', '#5a7d6a', '#c9a96e', '#5a7d9a', '#c45c5c', '#8a7d6a'],
+                    backgroundColor: [
+                        this.getCSSVar('--accent-primary'),
+                        this.getCSSVar('--accent-secondary'),
+                        this.getCSSVar('--accent-tertiary'),
+                        this.getCSSVar('--accent-info'),
+                        this.getCSSVar('--accent-danger'),
+                        '#8a7d6a'
+                    ],
                     borderWidth: 0
                 }]
             },
@@ -2263,7 +2329,7 @@ const Dashboard = {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'right', labels: { font: { family: 'Inter' }, color: 'var(--text-primary)' } }
+                    legend: { position: 'right', labels: { font: { family: 'Inter' }, color: this.getCSSVar('--text-primary') } }
                 }
             }
         });
@@ -2294,7 +2360,7 @@ const Dashboard = {
                 datasets: [{
                     label: 'จำนวนงาน',
                     data: data,
-                    backgroundColor: '#d97757',
+                    backgroundColor: this.getCSSVar('--accent-primary'),
                     borderRadius: 6
                 }]
             },
@@ -2306,8 +2372,15 @@ const Dashboard = {
                     legend: { display: false }
                 },
                 scales: {
-                    y: { beginAtZero: true, ticks: { font: { family: 'Inter' }, color: 'var(--text-secondary)' } },
-                    x: { ticks: { font: { family: 'Inter' }, color: 'var(--text-secondary)' } }
+                    y: { 
+                        beginAtZero: true, 
+                        ticks: { font: { family: 'Inter' }, color: this.getCSSVar('--text-secondary') },
+                        grid: { color: this.getCSSVar('--border-light') }
+                    },
+                    x: { 
+                        ticks: { font: { family: 'Inter' }, color: this.getCSSVar('--text-secondary') },
+                        grid: { color: this.getCSSVar('--border-light') }
+                    }
                 }
             }
         });
@@ -2338,7 +2411,7 @@ const Dashboard = {
                 datasets: [{
                     label: 'จำนวนการขอใช้รถ',
                     data: data,
-                    backgroundColor: '#5a7d6a',
+                    backgroundColor: this.getCSSVar('--accent-secondary'),
                     borderRadius: 6
                 }]
             },
@@ -2351,8 +2424,15 @@ const Dashboard = {
                     legend: { display: false }
                 },
                 scales: {
-                    x: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Inter' }, color: 'var(--text-secondary)' } },
-                    y: { ticks: { font: { family: 'Inter' }, color: 'var(--text-secondary)' } }
+                    x: { 
+                        beginAtZero: true, 
+                        ticks: { stepSize: 1, font: { family: 'Inter' }, color: this.getCSSVar('--text-secondary') },
+                        grid: { color: this.getCSSVar('--border-light') }
+                    },
+                    y: { 
+                        ticks: { font: { family: 'Inter' }, color: this.getCSSVar('--text-secondary') },
+                        grid: { color: this.getCSSVar('--border-light') }
+                    }
                 }
             }
         });
@@ -2403,16 +2483,16 @@ const Dashboard = {
                     {
                         label: 'การปฏิบัติงาน',
                         data: annData,
-                        borderColor: '#d97757',
-                        backgroundColor: 'rgba(217, 119, 87, 0.1)',
+                        borderColor: this.getCSSVar('--accent-primary'),
+                        backgroundColor: this.getCSSVar('--accent-primary-subtle'),
                         fill: true,
                         tension: 0.4
                     },
                     {
                         label: 'การใช้รถราชการ',
                         data: vehData,
-                        borderColor: '#5a7d6a',
-                        backgroundColor: 'rgba(90, 125, 106, 0.1)',
+                        borderColor: this.getCSSVar('--accent-secondary'),
+                        backgroundColor: this.getCSSVar('--accent-secondary-subtle'),
                         fill: true,
                         tension: 0.4
                     }
@@ -2423,11 +2503,18 @@ const Dashboard = {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'top', labels: { font: { family: 'Inter' }, color: 'var(--text-primary)' } }
+                    legend: { position: 'top', labels: { font: { family: 'Inter' }, color: this.getCSSVar('--text-primary') } }
                 },
                 scales: {
-                    y: { beginAtZero: true, ticks: { font: { family: 'Inter' }, color: 'var(--text-secondary)' } },
-                    x: { ticks: { font: { family: 'Inter' }, color: 'var(--text-secondary)' } }
+                    y: { 
+                        beginAtZero: true, 
+                        ticks: { font: { family: 'Inter' }, color: this.getCSSVar('--text-secondary') },
+                        grid: { color: this.getCSSVar('--border-light') }
+                    },
+                    x: { 
+                        ticks: { font: { family: 'Inter' }, color: this.getCSSVar('--text-secondary') },
+                        grid: { color: this.getCSSVar('--border-light') }
+                    }
                 }
             }
         });
