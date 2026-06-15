@@ -101,6 +101,15 @@ const AppState = {
             }
         });
 
+        // Setup conflict check listeners
+        ['vehDate', 'vehCarLicense', 'vehDepartureTime', 'vehReturnTime'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('change', () => VehicleLogs.checkConflicts());
+                el.addEventListener('input', () => VehicleLogs.checkConflicts());
+            }
+        });
+
         showApp();
     }
 };
@@ -541,23 +550,33 @@ const FilterUtils = {
     updateInputs(prefix) {
         const type = document.getElementById(`${prefix}FilterType`).value;
         const container = document.getElementById(`${prefix}FilterInputs`);
+        const outerContainer = document.getElementById(`${prefix}FilterInputsContainer`);
         let html = '';
         const year = new Date().getFullYear();
+        const moduleName = prefix === 'ann' ? 'Announcements' : 'VehicleLogs';
+
+        if (outerContainer) {
+            if (['daily', 'monthly', 'quarterly', 'yearly'].includes(type)) {
+                outerContainer.style.display = 'block';
+            } else {
+                outerContainer.style.display = 'none';
+            }
+        }
 
         switch (type) {
             case 'daily':
-                html = `<input type="date" class="form-control form-control-sm" id="${prefix}FilterDate">`;
+                html = `<input type="date" class="form-control form-control-sm" id="${prefix}FilterDate" onchange="${moduleName}.applyFilter()">`;
                 break;
             case 'monthly':
-                html = `<input type="month" class="form-control form-control-sm" id="${prefix}FilterMonth">`;
+                html = `<input type="month" class="form-control form-control-sm" id="${prefix}FilterMonth" onchange="${moduleName}.applyFilter()">`;
                 break;
             case 'quarterly':
                 html = `
                     <div class="d-flex gap-2">
-                        <select class="form-select form-select-sm" id="${prefix}FilterYear">
+                        <select class="form-select form-select-sm" id="${prefix}FilterYear" onchange="${moduleName}.applyFilter()">
                             ${this.generateYearOptions(year)}
                         </select>
-                        <select class="form-select form-select-sm" id="${prefix}FilterQuarter">
+                        <select class="form-select form-select-sm" id="${prefix}FilterQuarter" onchange="${moduleName}.applyFilter()">
                             <option value="1">ไตรมาส 1 (ม.ค.-มี.ค.)</option>
                             <option value="2">ไตรมาส 2 (เม.ย.-มิ.ย.)</option>
                             <option value="3">ไตรมาส 3 (ก.ค.-ก.ย.)</option>
@@ -567,15 +586,12 @@ const FilterUtils = {
                 break;
             case 'yearly':
                 html = `
-                    <select class="form-select form-select-sm" id="${prefix}FilterYear">
+                    <select class="form-select form-select-sm" id="${prefix}FilterYear" onchange="${moduleName}.applyFilter()">
                         ${this.generateYearOptions(year)}
                     </select>`;
                 break;
-            case 'upcoming':
-                html = `<div class="small pt-2" style="color:var(--text-tertiary)">แสดงรายการวันนี้และอนาคต</div>`;
-                break;
-            default: // all
-                html = `<div class="small pt-2" style="color:var(--text-tertiary)">แสดงข้อมูลทั้งหมด</div>`;
+            default:
+                html = '';
         }
         container.innerHTML = html;
     },
@@ -933,12 +949,36 @@ const Announcements = {
     /** Apply filter */
     applyFilter() {
         const criteria = FilterUtils.getCriteria('ann');
-        const filtered = FilterUtils.filterData(AppState.announcements, criteria);
+        let filtered = FilterUtils.filterData(AppState.announcements, criteria);
+
+        // Apply instant search filter
+        const searchInput = document.getElementById('annSearch');
+        if (searchInput) {
+            const query = searchInput.value.trim().toLowerCase();
+            if (query) {
+                filtered = filtered.filter(item => {
+                    const title = (item.Title || '').toLowerCase();
+                    const detail = (item.Detail || '').toLowerCase();
+                    const location = (item.Location || '').toLowerCase();
+                    const coop = (item.CoopParticipation || '').toLowerCase();
+                    const workgroup = (item.WorkGroup || '').toLowerCase();
+                    const postedby = (item.PostedBy || '').toLowerCase();
+                    return title.includes(query) ||
+                           detail.includes(query) ||
+                           location.includes(query) ||
+                           coop.includes(query) ||
+                           workgroup.includes(query) ||
+                           postedby.includes(query);
+                });
+            }
+        }
         this.render(filtered);
     },
 
     /** Reset filter */
     resetFilter() {
+        const searchInput = document.getElementById('annSearch');
+        if (searchInput) searchInput.value = '';
         document.getElementById('annFilterType').value = 'all';
         FilterUtils.updateInputs('ann');
         this.applyFilter();
@@ -1000,8 +1040,50 @@ const VehicleLogs = {
             const isPast = Calendar.normalizeDate(item.Date) < today;
             const statusClass = (item.Status || '').toLowerCase();
             const statusLabel = item.Status === 'Pending' ? 'Prebook (รอดำเนินการ)' : escapeHtml(item.Status || '');
+
+            // Encode data for quick status change dropdown
+            const evData = {
+                id: item.ID,
+                date: item.Date,
+                label: item.CarLicense || '',
+                purpose: item.Purpose || '',
+                destination: item.Destination || '',
+                requestor: item.Requestor || item.requestor || '',
+                passengerCount: item.PassengerCount || 1,
+                departureTime: item.DepartureTime || '',
+                returnTime: item.ReturnTime || '',
+                driver: item.Driver || ''
+            };
+            const evB64 = btoa(encodeURIComponent(JSON.stringify(evData)));
+
+            const allStatuses = [
+                { value: 'Pending',   label: 'Pending (รอดำเนินการ)',  cls: 'bg-pending' },
+                { value: 'Approved',  label: 'Approved (อนุมัติ)',     cls: 'bg-approved' },
+                { value: 'Completed', label: 'Completed (เสร็จสิ้น)', cls: 'bg-completed' },
+                { value: 'Cancelled', label: 'Cancelled (ยกเลิก)',     cls: 'bg-cancelled' },
+            ];
+
+            let quickStatusHtml = '';
+            if (AppState.isAdmin()) {
+                const dropdownItems = allStatuses
+                    .filter(s => s.value !== item.Status)
+                    .map(s => `<li><button class="dropdown-item d-flex align-items-center gap-2 py-2" onclick="VehicleLogs.quickUpdateStatus('${evB64}', '${s.value}')"><span class="status-indicator-dot ${s.cls}"></span>${s.label}</button></li>`)
+                    .join('');
+
+                quickStatusHtml = `
+                    <div class="dropdown d-inline-block">
+                        <button class="btn btn-outline-custom btn-sm dropdown-toggle py-1 px-2 d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 11px; min-height: 32px;">
+                          <i data-lucide="refresh-cw" style="width:11px;height:11px;"></i> สถานะ
+                        </button>
+                        <ul class="dropdown-menu shadow-sm border-0" style="font-size:0.85em; border-radius: 12px; overflow: hidden;">
+                            ${dropdownItems}
+                        </ul>
+                    </div>
+                `;
+            }
+
             return `
-      <div class="list-card fade-in${isPast ? ' row-past' : ''}" style="animation-delay: ${index * 0.05}s">
+      <div class="list-card border-${statusClass} fade-in${isPast ? ' row-past' : ''}" style="animation-delay: ${index * 0.05}s">
         <div class="list-card-header">
           <div class="list-card-title">${escapeHtml(item.Purpose || '-')}</div>
           <span class="badge-status badge-${statusClass}">${statusLabel}</span>
@@ -1015,10 +1097,12 @@ const VehicleLogs = {
         <div class="list-card-body">
           ผู้ขอ: <strong>${escapeHtml(item.Requestor || item.requestor || '-')}</strong>
           <span style="color:var(--text-tertiary)"> · ${escapeHtml(item.PassengerCount || 1)} คน · พนักงานขับ: ${item.Driver === 'พนักงานขับรถลา' ? '<span style="color:var(--accent-danger);font-weight:bold;">' + escapeHtml(item.Driver) + '</span>' : escapeHtml(item.Driver || '-')}</span>
+          ${item.Status === 'Cancelled' ? `<p class="mt-2 mb-0 p-2 rounded small" style="background: var(--accent-danger-subtle); border-left: 3px solid var(--accent-danger); color: var(--accent-danger);"><i data-lucide="x-circle" style="width:12px;height:12px;display:inline-vertical-align:middle;" class="me-1"></i> <strong>เหตุผลที่ยกเลิก:</strong> ${escapeHtml(item.CancelReason || 'ไม่ระบุ')}</p>` : ''}
         </div>
         <div class="list-card-footer">
           <span style="font-size:12px;color:var(--text-tertiary)">#${index + 1}</span>
           <div class="list-card-actions">
+            ${quickStatusHtml}
             ${AppState.isAdmin() ? `
             <button class="btn btn-outline-custom btn-sm" onclick="ExportUtils.printVehicleForm('${item.ID}')" title="พิมพ์ใบขออนุญาต">
               <i data-lucide="printer" style="width:14px;height:14px;"></i>
@@ -1076,6 +1160,7 @@ const VehicleLogs = {
         document.getElementById('vehStatus').value = 'Approved';
         document.getElementById('vehCancelReason').value = '';
         document.getElementById('vehCancelReasonGroup').style.display = 'none';
+        document.getElementById('vehConflictWarning').style.display = 'none';
         new bootstrap.Modal(document.getElementById('vehFormModal')).show();
     },
 
@@ -1110,7 +1195,9 @@ const VehicleLogs = {
         document.getElementById('vehStatus').value = status;
         document.getElementById('vehCancelReason').value = item.CancelReason || '';
         document.getElementById('vehCancelReasonGroup').style.display = status === 'Cancelled' ? 'block' : 'none';
+        document.getElementById('vehConflictWarning').style.display = 'none';
         new bootstrap.Modal(document.getElementById('vehFormModal')).show();
+        this.checkConflicts();
     },
 
     /** Save vehicle log (add or update) */
@@ -1157,13 +1244,37 @@ const VehicleLogs = {
     /** Apply filter */
     applyFilter() {
         const criteria = FilterUtils.getCriteria('veh');
-        const filtered = FilterUtils.filterData(AppState.vehicleLogs, criteria);
+        let filtered = FilterUtils.filterData(AppState.vehicleLogs, criteria);
+
+        // Apply instant search filter
+        const searchInput = document.getElementById('vehSearch');
+        if (searchInput) {
+            const query = searchInput.value.trim().toLowerCase();
+            if (query) {
+                filtered = filtered.filter(item => {
+                    const purpose = (item.Purpose || '').toLowerCase();
+                    const destination = (item.Destination || '').toLowerCase();
+                    const requestor = (item.Requestor || item.requestor || '').toLowerCase();
+                    const driver = (item.Driver || '').toLowerCase();
+                    const license = (item.CarLicense || '').toLowerCase();
+                    const status = (item.Status || '').toLowerCase();
+                    return purpose.includes(query) ||
+                           destination.includes(query) ||
+                           requestor.includes(query) ||
+                           driver.includes(query) ||
+                           license.includes(query) ||
+                           status.includes(query);
+                });
+            }
+        }
         this.render(filtered);
     },
 
     /** Reset filter */
     resetFilter() {
-        document.getElementById('vehFilterType').value = 'upcoming';
+        const searchInput = document.getElementById('vehSearch');
+        if (searchInput) searchInput.value = '';
+        document.getElementById('vehFilterType').value = 'all';
         FilterUtils.updateInputs('veh');
         this.applyFilter();
     },
@@ -1236,6 +1347,61 @@ const VehicleLogs = {
         } else {
             showToast(result.error, 'error');
         }
+    },
+
+    /** Check booking conflicts in real-time */
+    checkConflicts() {
+        const date = document.getElementById('vehDate').value;
+        const carLicense = document.getElementById('vehCarLicense').value;
+        const formId = document.getElementById('vehFormId').value;
+        const warningDiv = document.getElementById('vehConflictWarning');
+        const warningText = document.getElementById('vehConflictWarningText');
+
+        if (!date || !carLicense) {
+            warningDiv.style.display = 'none';
+            return;
+        }
+
+        const conflicts = AppState.vehicleLogs.filter(v => {
+            return Calendar.normalizeDate(v.Date) === date &&
+                   v.CarLicense === carLicense &&
+                   v.ID !== formId &&
+                   v.Status !== 'Cancelled';
+        });
+
+        if (conflicts.length > 0) {
+            const conflictDetails = conflicts.map(c => {
+                const dep = formatTime(c.DepartureTime);
+                const ret = formatTime(c.ReturnTime);
+                const req = escapeHtml(c.Requestor || c.requestor || '-');
+                return `${dep} - ${ret} น. (${req})`;
+            }).join(', ');
+
+            warningText.innerHTML = `⚠️ <strong>รถติดจองในวันที่เลือก:</strong> ทะเบียน ${escapeHtml(carLicense)} มีคิวจองเวลา: ${conflictDetails}`;
+            warningDiv.style.display = 'block';
+            if (window.lucide) lucide.createIcons();
+        } else {
+            warningDiv.style.display = 'none';
+        }
+    },
+
+    /** Adjust passenger count using stepper */
+    adjustPassenger(amount) {
+        const input = document.getElementById('vehPassengerCount');
+        if (input) {
+            const val = parseInt(input.value) || 1;
+            input.value = Math.max(1, val + amount);
+        }
+    },
+
+    /** Set departure/return time preset */
+    setTimePreset(type, time) {
+        if (type === 'dep') {
+            document.getElementById('vehDepartureTime').value = time;
+        } else if (type === 'ret') {
+            document.getElementById('vehReturnTime').value = time;
+        }
+        this.checkConflicts();
     }
 };
 

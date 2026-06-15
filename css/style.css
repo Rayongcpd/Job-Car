@@ -1676,3 +1676,77 @@ body {
 .group-modal-item:last-child {
     border-bottom: none;
 }
+
+/* ============================================================
+   🎨 ADDED: VEHICLE REQUEST OVERHAUL UX/UI STYLES
+   ============================================================ */
+
+/* 1. Status Borders for List Cards */
+.list-card.border-approved {
+    border-left: 5px solid var(--accent-secondary) !important;
+}
+.list-card.border-pending {
+    border-left: 5px solid var(--accent-tertiary) !important;
+}
+.list-card.border-completed {
+    border-left: 5px solid var(--accent-info) !important;
+}
+.list-card.border-cancelled {
+    border-left: 5px solid var(--accent-danger) !important;
+    background-color: var(--bg-subtle);
+    opacity: 0.8;
+}
+
+/* 2. Custom Search & Filter Toolbar Design */
+.filter-toolbar {
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light) !important;
+    background-color: var(--bg-elevated) !important;
+}
+.filter-toolbar .input-group-text {
+    border-color: var(--border-light) !important;
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-tertiary);
+}
+.filter-toolbar input#vehSearch,
+.filter-toolbar input#annSearch {
+    border-left: none !important;
+}
+
+/* 3. Passenger Stepper & Stepper Buttons */
+.input-group .btn-outline-secondary {
+    border-color: var(--border-light) !important;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+.input-group .btn-outline-secondary:hover {
+    background-color: var(--bg-subtle) !important;
+    color: var(--text-primary);
+}
+
+/* 4. Form Layout & Subheaders */
+.form-subheader {
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--accent-primary);
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 4px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+/* 5. Quick Presets Time Badges */
+.time-preset-badge {
+    cursor: pointer;
+    font-size: 11px;
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    background-color: var(--bg-subtle);
+    color: var(--text-secondary);
+    transition: var(--transition-fast);
+}
+.time-preset-badge:hover {
+    background-color: var(--accent-primary-subtle);
+    color: var(--accent-primary);
+}

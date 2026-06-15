@@ -254,12 +254,20 @@
 
         <div class="data-card">
           <!-- Filter Toolbar for Announcements -->
-          <div class="filter-toolbar mb-3 p-3 rounded">
-            <div class="row g-2 align-items-end">
+          <div class="filter-toolbar mb-4 p-3 rounded shadow-sm">
+            <div class="row g-3 align-items-center">
+              <div class="col-md-5">
+                <label class="form-label small fw-medium text-secondary">ค้นหาการปฏิบัติงาน (Search)</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-transparent border-end-0 text-muted"><i data-lucide="search" style="width:14px;height:14px;"></i></span>
+                  <input type="text" class="form-control form-control-sm border-start-0 ps-0" id="annSearch" placeholder="พิมพ์หัวข้อ, รายละเอียด, สถานที่, หรือกลุ่มงาน..." oninput="Announcements.applyFilter()">
+                  <button class="btn btn-outline-secondary" type="button" onclick="Announcements.resetFilter()" title="รีเซ็ตตัวกรอง"><i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i></button>
+                </div>
+              </div>
               <div class="col-md-3">
-                <label class="form-label small" style="color:var(--text-tertiary)">ประเภทการกรอง</label>
+                <label class="form-label small fw-medium text-secondary">ประเภทการกรอง (Filter Type)</label>
                 <select class="form-select form-select-sm" id="annFilterType"
-                  onchange="FilterUtils.updateInputs('ann')">
+                  onchange="FilterUtils.updateInputs('ann'); Announcements.applyFilter()">
                   <option value="upcoming">รายการที่จะมาถึง (Upcoming)</option>
                   <option value="all" selected>ทั้งหมด (All)</option>
                   <option value="daily">รายวัน (Daily)</option>
@@ -268,20 +276,12 @@
                   <option value="yearly">รายปี (Yearly)</option>
                 </select>
               </div>
-
               <!-- Dynamic Inputs Container -->
-              <div class="col-md-6" id="annFilterInputs">
-                <!-- Inputs will be injected here by JS -->
-                <div class="small pt-2" style="color:var(--text-tertiary)">เลือกประเภทการกรองเพื่อเริ่มต้น</div>
-              </div>
-
-              <div class="col-md-3 text-end">
-                <button class="btn btn-primary-custom btn-sm w-100 mb-1" onclick="Announcements.applyFilter()">
-                  <i data-lucide="filter" style="width:14px;height:14px;"></i> กรองข้อมูล
-                </button>
-                <button class="btn btn-outline-secondary btn-sm w-100" onclick="Announcements.resetFilter()">
-                  <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i> รีเซ็ต
-                </button>
+              <div class="col-md-4" id="annFilterInputsContainer" style="display: none;">
+                <label class="form-label small fw-medium text-secondary">รายละเอียดการกรอง</label>
+                <div id="annFilterInputs">
+                  <!-- Inputs will be injected here by JS -->
+                </div>
               </div>
             </div>
           </div>
@@ -320,12 +320,20 @@
 
         <div class="data-card">
           <!-- Filter Toolbar for Vehicle Logs -->
-          <div class="filter-toolbar mb-3 p-3 rounded">
-            <div class="row g-2 align-items-end">
+          <div class="filter-toolbar mb-4 p-3 rounded shadow-sm">
+            <div class="row g-3 align-items-center">
+              <div class="col-md-5">
+                <label class="form-label small fw-medium text-secondary">ค้นหาด่วน (Search)</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-transparent border-end-0 text-muted"><i data-lucide="search" style="width:14px;height:14px;"></i></span>
+                  <input type="text" class="form-control form-control-sm border-start-0 ps-0" id="vehSearch" placeholder="พิมพ์ชื่อผู้ขอ, ปลายทาง, จุดประสงค์, หรือทะเบียนรถ..." oninput="VehicleLogs.applyFilter()">
+                  <button class="btn btn-outline-secondary" type="button" onclick="VehicleLogs.resetFilter()" title="รีเซ็ตตัวกรอง"><i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i></button>
+                </div>
+              </div>
               <div class="col-md-3">
-                <label class="form-label small" style="color:var(--text-tertiary)">ประเภทการกรอง</label>
+                <label class="form-label small fw-medium text-secondary">ประเภทการกรอง (Filter Type)</label>
                 <select class="form-select form-select-sm" id="vehFilterType"
-                  onchange="FilterUtils.updateInputs('veh')">
+                  onchange="FilterUtils.updateInputs('veh'); VehicleLogs.applyFilter()">
                   <option value="upcoming">รายการที่จะมาถึง (Upcoming)</option>
                   <option value="all" selected>ทั้งหมด (All)</option>
                   <option value="daily">รายวัน (Daily)</option>
@@ -334,20 +342,12 @@
                   <option value="yearly">รายปี (Yearly)</option>
                 </select>
               </div>
-
               <!-- Dynamic Inputs Container -->
-              <div class="col-md-6" id="vehFilterInputs">
-                <!-- Inputs will be injected here by JS -->
-                <div class="small pt-2" style="color:var(--text-tertiary)">เลือกประเภทการกรองเพื่อเริ่มต้น</div>
-              </div>
-
-              <div class="col-md-3 text-end">
-                <button class="btn btn-primary-custom btn-sm w-100 mb-1" onclick="VehicleLogs.applyFilter()">
-                  <i data-lucide="filter" style="width:14px;height:14px;"></i> กรองข้อมูล
-                </button>
-                <button class="btn btn-outline-secondary btn-sm w-100" onclick="VehicleLogs.resetFilter()">
-                  <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i> รีเซ็ต
-                </button>
+              <div class="col-md-4" id="vehFilterInputsContainer" style="display: none;">
+                <label class="form-label small fw-medium text-secondary">รายละเอียดการกรอง</label>
+                <div id="vehFilterInputs">
+                  <!-- Inputs will be injected here by JS -->
+                </div>
               </div>
             </div>
           </div>
@@ -557,6 +557,10 @@
         <div class="modal-body">
           <input type="hidden" id="vehFormId">
           <div class="row g-3">
+            <!-- Section 1: ข้อมูลยานพาหนะและการเดินทาง -->
+            <div class="col-md-12">
+              <div class="form-subheader"><i data-lucide="car" class="lucide-sm me-1"></i>ข้อมูลยานพาหนะและวันเวลา</div>
+            </div>
             <div class="col-md-6">
               <label class="form-label" style="color:var(--text-secondary)">วันที่ *</label>
               <input type="date" class="form-control" id="vehDate">
@@ -571,6 +575,40 @@
                 <option value="นค 2286 รย (รถตู้)">นค 2286 รย (รถตู้)</option>
               </select>
             </div>
+            
+            <!-- Conflict alert banner -->
+            <div class="col-md-12" id="vehConflictWarning" style="display: none;">
+              <div class="alert alert-warning d-flex align-items-center gap-2 mb-0 py-2 border-0" style="background: var(--accent-tertiary-subtle); color: #a08040; border-radius: var(--radius-md);">
+                <i data-lucide="alert-triangle" style="width:16px;height:16px;flex-shrink:0;"></i>
+                <span id="vehConflictWarningText" style="font-size: 13px;"></span>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" style="color:var(--text-secondary)">เวลาไป</label>
+              <div class="d-flex flex-column gap-1">
+                <input type="time" class="form-control" id="vehDepartureTime">
+                <div class="d-flex gap-2 mt-1 flex-wrap">
+                  <span class="time-preset-badge" onclick="VehicleLogs.setTimePreset('dep', '08:30')">08:30 น. (เช้า)</span>
+                  <span class="time-preset-badge" onclick="VehicleLogs.setTimePreset('dep', '13:00')">13:00 น. (บ่าย)</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="color:var(--text-secondary)">เวลากลับ</label>
+              <div class="d-flex flex-column gap-1">
+                <input type="time" class="form-control" id="vehReturnTime">
+                <div class="d-flex gap-2 mt-1 flex-wrap">
+                  <span class="time-preset-badge" onclick="VehicleLogs.setTimePreset('ret', '12:00')">12:00 น. (เที่ยง)</span>
+                  <span class="time-preset-badge" onclick="VehicleLogs.setTimePreset('ret', '16:30')">16:30 น. (เย็น)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section 2: รายละเอียดการจอง -->
+            <div class="col-md-12">
+              <div class="form-subheader"><i data-lucide="file-text" class="lucide-sm me-1"></i>รายละเอียดผู้ใช้และจุดประสงค์</div>
+            </div>
             <div class="col-md-12">
               <label class="form-label" style="color:var(--text-secondary)">จุดประสงค์การขอใช้รถ *</label>
               <input type="text" class="form-control" id="vehPurpose" placeholder="ระบุจุดประสงค์การขอใช้รถ">
@@ -579,26 +617,24 @@
               <label class="form-label" style="color:var(--text-secondary)">จุดหมายปลายทาง *</label>
               <input type="text" class="form-control" id="vehDestination" placeholder="สถานที่ปลายทาง">
             </div>
-            <div class="col-md-8">
+            <div class="col-md-7 col-sm-12">
               <label class="form-label" style="color:var(--text-secondary)">ผู้ขอใช้รถ / กลุ่มงาน *</label>
               <input type="text" class="form-control" id="vehRequestor" placeholder="ระบุชื่อผู้ขอ หรือ กลุ่มงาน">
             </div>
-            <div class="col-md-4">
+            <div class="col-md-5 col-sm-12">
               <label class="form-label" style="color:var(--text-secondary)">จำนวนผู้โดยสาร *</label>
               <div class="input-group">
-                <input type="number" class="form-control" id="vehPassengerCount" value="1" min="1">
+                <button type="button" class="btn btn-outline-secondary" onclick="VehicleLogs.adjustPassenger(-1)">-</button>
+                <input type="number" class="form-control text-center" id="vehPassengerCount" value="1" min="1">
+                <button type="button" class="btn btn-outline-secondary" onclick="VehicleLogs.adjustPassenger(1)">+</button>
                 <span class="input-group-text">คน</span>
               </div>
             </div>
-            <div class="col-md-6">
-              <label class="form-label" style="color:var(--text-secondary)">เวลาไป</label>
-              <input type="time" class="form-control" id="vehDepartureTime">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label" style="color:var(--text-secondary)">เวลากลับ</label>
-              <input type="time" class="form-control" id="vehReturnTime">
-            </div>
 
+            <!-- Section 3: การมอบหมายและสถานะ -->
+            <div class="col-md-12">
+              <div class="form-subheader"><i data-lucide="user-check" class="lucide-sm me-1"></i>พนักงานขับและสถานะ (สำหรับเจ้าหน้าที่)</div>
+            </div>
             <div class="col-md-6">
               <label class="form-label" style="color:var(--text-secondary)">พนักงานขับรถ</label>
               <select class="form-select" id="vehDriver">
