@@ -226,6 +226,7 @@ body {
 }
 
 .btn-primary-custom:hover {
+    background: var(--accent-primary-hover);
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(217, 119, 87, 0.3);
     color: #fff;
@@ -243,6 +244,7 @@ body {
 }
 
 .btn-danger-custom:hover {
+    background: var(--accent-danger-hover);
     transform: translateY(-1px);
     box-shadow: 0 6px 20px rgba(192, 108, 108, 0.3);
     color: #fff;
