@@ -309,6 +309,9 @@
         <div class="page-header">
           <h3><i data-lucide="car" class="lucide-lg"></i>การขอใช้รถราชการ</h3>
           <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary btn-sm admin-only" onclick="DriverVehicleSettings.showModal()" title="จัดการคนขับและทะเบียนรถ" style="display: none;">
+              <i data-lucide="users" style="width:14px;height:14px;"></i> จัดการคนขับและรถ
+            </button>
             <button class="btn btn-success btn-sm admin-only" onclick="ExportUtils.exportToExcel('vehicles')">
               <i data-lucide="file-spreadsheet" style="width:14px;height:14px;"></i> ดาวน์โหลด Excel
             </button>
@@ -704,6 +707,11 @@
               <button class="nav-link" id="color-tab" data-bs-toggle="tab" data-bs-target="#color" type="button"
                 role="tab" aria-controls="color" aria-selected="false"><i data-lucide="palette" style="width:14px;height:14px;" class="me-1"></i>สีสัน</button>
             </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="driver-setting-tab" type="button" onclick="DriverVehicleSettings.showModal()">
+                <i data-lucide="car" style="width:14px;height:14px;" class="me-1"></i>คนขับและทะเบียนรถ
+              </button>
+            </li>
           </ul>
 
           <div class="tab-content pt-3" id="settingsTabContent">
@@ -857,6 +865,57 @@
           <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">ยกเลิก</button>
           <button type="button" class="btn btn-primary-custom" id="btnSaveSettings" onclick="Settings.save()">
             <i data-lucide="save" style="width:16px;height:16px;" class="me-2"></i>บันทึกการตั้งค่า
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ DRIVER & VEHICLE MANAGEMENT MODAL ============ -->
+  <div class="modal fade" id="driverVehicleModal" tabindex="-1" aria-labelledby="driverVehicleModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="driverVehicleModalTitle">
+            <i data-lucide="car" style="width:20px;height:20px;" class="me-2 text-primary"></i>จัดการคนขับและเลขทะเบียนรถที่รับผิดชอบ
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info d-flex align-items-center gap-2 mb-3 py-2 border-0" style="background: rgba(67, 97, 238, 0.1); color: var(--accent-primary); border-radius: var(--radius-md); font-size: 13px;">
+            <i data-lucide="info" style="width:18px;height:18px;flex-shrink:0;"></i>
+            <span>กำหนดรายชื่อพนักงานขับรถ เบอร์โทรศัพท์ และเลขทะเบียนรถประจำตัวที่รับผิดชอบ เพื่อใช้ในตัวเลือกการจองรถราชการ และระบบจะจับคู่คนขับให้อัตโนมัติเมื่อเลือกทะเบียนรถ</span>
+          </div>
+
+          <div class="table-responsive mb-3">
+            <table class="table table-bordered align-middle mb-0" id="driverVehicleTable">
+              <thead class="table-light" style="font-size: 13px;">
+                <tr>
+                  <th style="width: 50px;" class="text-center">#</th>
+                  <th>ชื่อ-นามสกุล / เบอร์โทรศัพท์คนขับ *</th>
+                  <th style="width: 250px;">เลขทะเบียนรถที่รับผิดชอบ *</th>
+                  <th style="width: 70px;" class="text-center">ลบ</th>
+                </tr>
+              </thead>
+              <tbody id="driverVehicleTableBody">
+                <!-- Dynamically injected rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center pt-2">
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="DriverVehicleSettings.addRow()">
+              <i data-lucide="plus" style="width:14px;height:14px;" class="me-1"></i> เพิ่มคนขับและรถ
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="DriverVehicleSettings.resetDefaults()" title="คืนค่าเริ่มต้น 4 คัน">
+              <i data-lucide="rotate-ccw" style="width:14px;height:14px;" class="me-1"></i> คืนค่าเริ่มต้น
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-custom" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" class="btn btn-primary-custom" id="btnSaveDriverVehicles" onclick="DriverVehicleSettings.save()">
+            <i data-lucide="save" style="width:16px;height:16px;" class="me-2"></i>บันทึกข้อมูล
           </button>
         </div>
       </div>

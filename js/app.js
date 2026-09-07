@@ -61,10 +61,13 @@ const AppState = {
         // Load settings configuration
         await Settings.init();
 
+        // Populate vehicle & driver select options
+        VehicleLogs.populateCarAndDriverOptions();
+
         // Control sidebar settings menu visibility
         const settingsMenu = document.getElementById('settingsMenuLink');
         if (settingsMenu) {
-            if (this.isSuperAdmin()) {
+            if (this.isAdmin()) {
                 settingsMenu.classList.remove('d-none');
             } else {
                 settingsMenu.classList.add('d-none');
@@ -112,6 +115,37 @@ const AppState = {
                 el.addEventListener('input', () => VehicleLogs.checkConflicts());
             }
         });
+
+        // Auto-pairing: Select vehicle -> select assigned driver
+        const carLicenseEl = document.getElementById('vehCarLicense');
+        if (carLicenseEl) {
+            carLicenseEl.addEventListener('change', (e) => {
+                const selectedPlate = e.target.value;
+                const driverEl = document.getElementById('vehDriver');
+                if (selectedPlate && driverEl) {
+                    const pair = Settings.getDriverVehicles().find(item => item.carLicense === selectedPlate);
+                    if (pair && pair.driver) {
+                        driverEl.value = pair.driver;
+                    }
+                }
+            });
+        }
+
+        // Auto-pairing: Select driver -> select assigned vehicle
+        const driverEl = document.getElementById('vehDriver');
+        if (driverEl) {
+            driverEl.addEventListener('change', (e) => {
+                const selectedDriver = e.target.value;
+                const carLicenseEl = document.getElementById('vehCarLicense');
+                if (selectedDriver && carLicenseEl && selectedDriver !== 'ผู้ขอใช้รถขับเอง' && selectedDriver !== 'พนักงานขับรถลา') {
+                    const pair = Settings.getDriverVehicles().find(item => item.driver === selectedDriver);
+                    if (pair && pair.carLicense) {
+                        carLicenseEl.value = pair.carLicense;
+                        VehicleLogs.checkConflicts();
+                    }
+                }
+            });
+        }
 
         showApp();
     }
@@ -246,6 +280,31 @@ const Auth = {
 // ============================================================
 const Settings = {
     data: {},
+
+    /** Default drivers and assigned vehicle license plates */
+    DEFAULT_DRIVERS: [
+        { driver: 'อธิกร (ต้อย) 0897535598', carLicense: 'ขม 8601 รย' },
+        { driver: 'สังเวียน (ปัน) 0958480428', carLicense: 'ขต 9095 รย' },
+        { driver: 'สมเกียรติ (เงาะ) 0813935098', carLicense: 'กว 1045 รย' },
+        { driver: 'ชัยมงคล (มงคล) 0652727512', carLicense: 'นค 2286 รย (รถตู้)' }
+    ],
+
+    /** Get list of drivers and assigned vehicle license plates */
+    getDriverVehicles() {
+        if (this.data && this.data.driverVehicles) {
+            try {
+                const parsed = typeof this.data.driverVehicles === 'string'
+                    ? JSON.parse(this.data.driverVehicles)
+                    : this.data.driverVehicles;
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    return parsed;
+                }
+            } catch (e) {
+                console.warn('Failed to parse driverVehicles setting:', e);
+            }
+        }
+        return JSON.parse(JSON.stringify(this.DEFAULT_DRIVERS));
+    },
 
     /**
      * Color presets: 10+default for Announcements, 10+default for Vehicles (22 total).
@@ -465,7 +524,13 @@ const Settings = {
 
     /** Show settings modal and populate current values */
     showModal() {
-        if (!AppState.isSuperAdmin()) return;
+        if (!AppState.isAdmin()) return;
+
+        // If not superadmin, route directly to driver & vehicle management modal
+        if (!AppState.isSuperAdmin()) {
+            DriverVehicleSettings.showModal();
+            return;
+        }
 
         document.getElementById('settingCalendarWidth').value = this.data.calendarMinWidth || '100%';
         document.getElementById('settingCellHeight').value = this.data.calendarCellMinHeight || '100';
@@ -491,7 +556,7 @@ const Settings = {
 
     /** Save settings to API and apply immediately */
     async save() {
-        if (!AppState.isSuperAdmin()) return;
+        if (!AppState.isAdmin()) return;
 
         const calendarMinWidth = document.getElementById('settingCalendarWidth').value.trim();
         const calendarCellMinHeight = document.getElementById('settingCellHeight').value.trim();
@@ -523,13 +588,15 @@ const Settings = {
 
         const result = await API.post({
             action: 'updateSettings',
+            username: AppState.user ? AppState.user.username : '',
+            password: AppState.user ? AppState.user.password : '',
             settings: settings
         });
 
         if (result.success) {
             showToast(result.message, 'success');
-            // Update local data and apply
-            this.data = settings;
+            // Update local data and apply without overwriting other keys
+            Object.assign(this.data, settings);
             this.applyToCSS();
 
             bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
@@ -539,6 +606,169 @@ const Settings = {
 
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="save" style="width:16px;height:16px;" class="me-2"></i>บันทึกการตั้งค่า';
+    }
+};
+
+// ============================================================
+// 🚗 DRIVER & VEHICLE SETTINGS MODULE
+// ============================================================
+const DriverVehicleSettings = {
+    items: [],
+
+    showModal() {
+        if (!AppState.isAdmin()) {
+            showToast('ไม่มีสิทธิ์ดำเนินการ (ต้องเป็นแอดมิน)', 'warning');
+            return;
+        }
+
+        // Load items from settings
+        this.items = JSON.parse(JSON.stringify(Settings.getDriverVehicles()));
+        this.renderTable();
+
+        // Hide settings modal if currently open
+        const settingsModalEl = document.getElementById('settingsModal');
+        if (settingsModalEl) {
+            const smInstance = bootstrap.Modal.getInstance(settingsModalEl);
+            if (smInstance) smInstance.hide();
+        }
+
+        const modalEl = document.getElementById('driverVehicleModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+
+        setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 50);
+    },
+
+    renderTable() {
+        const tbody = document.getElementById('driverVehicleTableBody');
+        if (!tbody) return;
+
+        if (this.items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">ยังไม่มีข้อมูลคนขับและรถ กดปุ่ม "เพิ่มคนขับและรถ" เพื่อเริ่มต้น</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = this.items.map((item, idx) => `
+            <tr data-index="${idx}">
+                <td class="text-center text-muted fw-bold">${idx + 1}</td>
+                <td>
+                    <input type="text" class="form-control form-control-sm driver-name-input" 
+                        value="${escapeHtml(item.driver || '')}" 
+                        placeholder="ชื่อ-สกุล และเบอร์โทร เช่น อธิกร (ต้อย) 0897535598"
+                        onchange="DriverVehicleSettings.updateItem(${idx}, 'driver', this.value)">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm car-license-input" 
+                        value="${escapeHtml(item.carLicense || '')}" 
+                        placeholder="เลขทะเบียนรถ เช่น ขม 8601 รย"
+                        onchange="DriverVehicleSettings.updateItem(${idx}, 'carLicense', this.value)">
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm p-1" 
+                        onclick="DriverVehicleSettings.removeRow(${idx})" title="ลบแถวนี้">
+                        <i data-lucide="trash-2" style="width:15px;height:15px;"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+        if (window.lucide) lucide.createIcons();
+    },
+
+    updateItem(index, key, value) {
+        if (this.items[index]) {
+            this.items[index][key] = value.trim();
+        }
+    },
+
+    syncFromDOM() {
+        const rows = document.querySelectorAll('#driverVehicleTableBody tr');
+        rows.forEach((row, idx) => {
+            const driverInput = row.querySelector('.driver-name-input');
+            const carInput = row.querySelector('.car-license-input');
+            if (driverInput && carInput && this.items[idx]) {
+                this.items[idx].driver = driverInput.value.trim();
+                this.items[idx].carLicense = carInput.value.trim();
+            }
+        });
+    },
+
+    addRow(driver = '', carLicense = '') {
+        this.syncFromDOM();
+        this.items.push({ driver, carLicense });
+        this.renderTable();
+    },
+
+    removeRow(index) {
+        this.syncFromDOM();
+        this.items.splice(index, 1);
+        this.renderTable();
+    },
+
+    resetDefaults() {
+        if (confirm('คุณต้องการคืนค่าเริ่มต้นรายการคนขับและทะเบียนรถ (4 รายการมาตรฐาน) หรือไม่?')) {
+            this.items = JSON.parse(JSON.stringify(Settings.DEFAULT_DRIVERS));
+            this.renderTable();
+        }
+    },
+
+    async save() {
+        if (!AppState.isAdmin()) return;
+
+        this.syncFromDOM();
+
+        if (this.items.length === 0) {
+            showToast('กรุณาระบุข้อมูลคนขับและทะเบียนรถอย่างน้อย 1 รายการ', 'warning');
+            return;
+        }
+
+        // Validate that all fields have values
+        for (let i = 0; i < this.items.length; i++) {
+            const item = this.items[i];
+            if (!item.driver) {
+                showToast(`กรุณากรอกชื่อคนขับในแถวที่ ${i + 1}`, 'warning');
+                return;
+            }
+            if (!item.carLicense) {
+                showToast(`กรุณากรอกเลขทะเบียนรถในแถวที่ ${i + 1}`, 'warning');
+                return;
+            }
+        }
+
+        const btn = document.getElementById('btnSaveDriverVehicles');
+        const origHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังบันทึก...';
+
+        try {
+            const payload = {
+                action: 'updateSettings',
+                username: AppState.user ? AppState.user.username : '',
+                password: AppState.user ? AppState.user.password : '',
+                settings: {
+                    driverVehicles: JSON.stringify(this.items)
+                }
+            };
+
+            const result = await API.post(payload);
+            if (result.success) {
+                showToast('บันทึกข้อมูลคนขับและเลขทะเบียนรถสำเร็จ', 'success');
+                Settings.data.driverVehicles = JSON.stringify(this.items);
+                VehicleLogs.populateCarAndDriverOptions();
+
+                const modalEl = document.getElementById('driverVehicleModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            } else {
+                showToast(result.error || 'เกิดข้อผิดพลาดในการบันทึก', 'danger');
+            }
+        } catch (error) {
+            showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message, 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+            if (window.lucide) lucide.createIcons();
+        }
     }
 };
 
@@ -1146,8 +1376,53 @@ const VehicleLogs = {
         setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 10);
     },
 
+    /** Populate car licenses and driver options dynamically from settings */
+    populateCarAndDriverOptions(selectedCar = '', selectedDriver = '') {
+        const list = Settings.getDriverVehicles();
+        const carSelect = document.getElementById('vehCarLicense');
+        const driverSelect = document.getElementById('vehDriver');
+        if (!carSelect || !driverSelect) return;
+
+        // Retain current selection if not explicitly provided
+        if (!selectedCar && carSelect.value) selectedCar = carSelect.value;
+        if (!selectedDriver && driverSelect.value) selectedDriver = driverSelect.value;
+
+        // Build Car License options
+        const carLicenses = [...new Set(list.map(item => item.carLicense).filter(Boolean))];
+        if (selectedCar && !carLicenses.includes(selectedCar)) {
+            carLicenses.push(selectedCar);
+        }
+
+        let carHtml = '<option value="" selected disabled>เลือกทะเบียนรถ</option>';
+        carLicenses.forEach(license => {
+            carHtml += `<option value="${escapeHtml(license)}">${escapeHtml(license)}</option>`;
+        });
+        carSelect.innerHTML = carHtml;
+        if (selectedCar) carSelect.value = selectedCar;
+
+        // Build Driver options
+        const drivers = [...new Set(list.map(item => item.driver).filter(Boolean))];
+        if (selectedDriver && !drivers.includes(selectedDriver) && selectedDriver !== 'ผู้ขอใช้รถขับเอง' && selectedDriver !== 'พนักงานขับรถลา') {
+            drivers.push(selectedDriver);
+        }
+
+        let driverHtml = '<option value="" selected disabled>เลือกพนักงานขับรถ</option>';
+        drivers.forEach(driver => {
+            const assigned = list.find(item => item.driver === driver);
+            const carInfo = assigned && assigned.carLicense ? ` (รถ: ${assigned.carLicense})` : '';
+            driverHtml += `<option value="${escapeHtml(driver)}">${escapeHtml(driver + carInfo)}</option>`;
+        });
+        driverHtml += `<option disabled>──────────</option>`;
+        driverHtml += `<option value="ผู้ขอใช้รถขับเอง">ผู้ขอใช้รถขับเอง</option>`;
+        driverHtml += `<option value="พนักงานขับรถลา">พนักงานขับรถลา</option>`;
+        driverSelect.innerHTML = driverHtml;
+        if (selectedDriver) driverSelect.value = selectedDriver;
+    },
+
     /** Show add form modal */
     showAdd() {
+        this.populateCarAndDriverOptions();
+
         document.getElementById('vehFormTitle').textContent = 'เพิ่มบันทึกการใช้รถ';
         document.getElementById('vehFormId').value = '';
         document.getElementById('vehDate').value = new Date().toISOString().split('T')[0];
@@ -1178,6 +1453,9 @@ const VehicleLogs = {
         const detailModalEl = document.getElementById('detailModal');
         const detailModalInstance = bootstrap.Modal.getInstance(detailModalEl);
         if (detailModalInstance) detailModalInstance.hide();
+
+        // Populate options with existing car and driver preserved
+        this.populateCarAndDriverOptions(item.CarLicense || '', item.Driver || '');
 
         document.getElementById('vehFormTitle').textContent = 'แก้ไขบันทึกการใช้รถ';
         document.getElementById('vehFormId').value = item.ID;
@@ -1969,7 +2247,7 @@ function showApp() {
 
         const settingsMenu = document.getElementById('settingsMenuLink');
         if (settingsMenu) {
-            if (AppState.isSuperAdmin()) {
+            if (AppState.isAdmin()) {
                 settingsMenu.classList.remove('d-none');
             } else {
                 settingsMenu.classList.add('d-none');
