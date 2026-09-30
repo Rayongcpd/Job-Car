@@ -185,7 +185,7 @@ function isHtmlResponse(text) {
 const ConnectionManager = {
     state: 'online', // 'online' | 'reconnecting' | 'failed' | 'offline'
     hasActiveError: false,
-    activeRetries: 0,
+    activeRetries: new Set(),
     countdownTimer: null,
     countdownSeconds: 0,
     currentRetryCallback: null,
@@ -222,10 +222,10 @@ const ConnectionManager = {
     /**
      * Notify that a request is currently being retried
      */
-    setReconnecting(attempt, maxRetries, action = '', delayMs = 0) {
+    setReconnecting(reqId, attempt, maxRetries, action = '') {
         this.state = 'reconnecting';
         this.hasActiveError = true;
-        this.activeRetries++;
+        if (reqId) this.activeRetries.add(reqId);
 
         const thaiActionNames = {
             getAnnouncements: 'การปฏิบัติงาน',
@@ -245,18 +245,18 @@ const ConnectionManager = {
         });
     },
 
-    finishRetryAttempt() {
-        if (this.activeRetries > 0) {
-            this.activeRetries--;
-        }
-    },
-
     /**
      * Notify that connection / request succeeded
      */
-    setSuccess(message = 'เชื่อมต่อเซิร์ฟเวอร์สำเร็จแล้ว') {
-        this.finishRetryAttempt();
-        if (this.activeRetries > 0) return; // Other requests still retrying
+    setSuccess(reqId = null, message = 'เชื่อมต่อเซิร์ฟเวอร์สำเร็จแล้ว') {
+        if (reqId) {
+            this.activeRetries.delete(reqId);
+        } else {
+            this.activeRetries.clear();
+        }
+
+        // If other requests are still actively retrying in parallel, keep banner open
+        if (this.activeRetries.size > 0) return;
 
         this.state = 'online';
         this.hasActiveError = false;
@@ -270,17 +270,19 @@ const ConnectionManager = {
         });
 
         setTimeout(() => {
-            if (this.state === 'online') {
+            if (this.state === 'online' && this.activeRetries.size === 0) {
                 this.hideBanner();
             }
-        }, 2200);
+        }, 1500);
     },
 
     /**
      * All retries for a request failed
      */
-    setFailed(message = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', retryCallback = null) {
-        this.finishRetryAttempt();
+    setFailed(reqId = null, message = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', retryCallback = null) {
+        if (reqId) {
+            this.activeRetries.delete(reqId);
+        }
         this.state = 'failed';
         this.hasActiveError = true;
         if (retryCallback) {
@@ -419,6 +421,7 @@ const API = {
         const query = new URLSearchParams(params).toString();
         const maxRetries = options.maxRetries ?? API_RETRY_CONFIG.defaultMaxRetries;
         const action = params.action || 'get';
+        const reqId = `${action}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
         let lastError = null;
 
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -432,7 +435,7 @@ const API = {
 
             try {
                 if (isRetry && !options.silent) {
-                    ConnectionManager.setReconnecting(attempt, maxRetries, action);
+                    ConnectionManager.setReconnecting(reqId, attempt, maxRetries, action);
                 }
 
                 const res = await fetch(url, { signal: controller.signal });
@@ -455,11 +458,11 @@ const API = {
                     throw new Error(`Invalid JSON received: ${parseErr.message}`);
                 }
 
-                // If previous attempt had retried, show success in banner
-                if (isRetry && !options.silent) {
-                    ConnectionManager.setSuccess('เชื่อมต่อเซิร์ฟเวอร์สำเร็จแล้ว');
-                } else if (!isRetry && ConnectionManager.activeRetries === 0 && ConnectionManager.state === 'reconnecting') {
-                    ConnectionManager.setSuccess('เชื่อมต่อเซิร์ฟเวอร์สำเร็จแล้ว');
+                // If this or another request was retrying, mark finished and show success
+                if (!options.silent) {
+                    ConnectionManager.setSuccess(reqId, 'เชื่อมต่อเซิร์ฟเวอร์สำเร็จแล้ว');
+                } else {
+                    ConnectionManager.activeRetries.delete(reqId);
                 }
 
                 return data;
@@ -475,7 +478,7 @@ const API = {
                     ) + Math.floor(Math.random() * 300);
 
                     if (!options.silent) {
-                        ConnectionManager.setReconnecting(attempt + 1, maxRetries, action, waitTime);
+                        ConnectionManager.setReconnecting(reqId, attempt + 1, maxRetries, action);
                     }
                     await delay(waitTime);
                 }
@@ -485,7 +488,7 @@ const API = {
         // Exhausted all retries
         console.error(`[API.get] All ${maxRetries} attempts failed for action "${action}":`, lastError);
         if (!options.silent) {
-            ConnectionManager.setFailed(`ไม่สามารถโหลดข้อมูล (${action}) ได้ กรุณาตรวจสอบการเชื่อมต่อ`, () => refreshCurrentView());
+            ConnectionManager.setFailed(reqId, `ไม่สามารถโหลดข้อมูล (${action}) ได้ กรุณาตรวจสอบการเชื่อมต่อ`, () => refreshCurrentView());
         }
 
         return {
@@ -509,6 +512,7 @@ const API = {
 
         const maxRetries = options.maxRetries ?? API_RETRY_CONFIG.postMaxRetries;
         const action = body.action || 'post';
+        const reqId = `${action}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
         let lastError = null;
 
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -518,7 +522,7 @@ const API = {
 
             try {
                 if (isRetry && !options.silent) {
-                    ConnectionManager.setReconnecting(attempt, maxRetries, action);
+                    ConnectionManager.setReconnecting(reqId, attempt, maxRetries, action);
                 }
 
                 // NOTE: GAS Web App ไม่ support preflight CORS (OPTIONS request)
@@ -546,8 +550,10 @@ const API = {
                     throw new Error(`Invalid JSON received: ${parseErr.message}`);
                 }
 
-                if (isRetry && !options.silent) {
-                    ConnectionManager.setSuccess('ทำรายการสำเร็จแล้ว');
+                if (!options.silent) {
+                    ConnectionManager.setSuccess(reqId, 'ทำรายการสำเร็จแล้ว');
+                } else {
+                    ConnectionManager.activeRetries.delete(reqId);
                 }
 
                 return data;
@@ -559,7 +565,7 @@ const API = {
                 if (attempt < maxRetries) {
                     const waitTime = 2000 + Math.floor(Math.random() * 400);
                     if (!options.silent) {
-                        ConnectionManager.setReconnecting(attempt + 1, maxRetries, action, waitTime);
+                        ConnectionManager.setReconnecting(reqId, attempt + 1, maxRetries, action);
                     }
                     await delay(waitTime);
                 }
@@ -568,7 +574,7 @@ const API = {
 
         console.error(`[API.post] All ${maxRetries} attempts failed for action "${action}":`, lastError);
         if (!options.silent) {
-            ConnectionManager.setFailed(`ไม่สามารถส่งข้อมูล (${action}) ได้`, null);
+            ConnectionManager.setFailed(reqId, `ไม่สามารถส่งข้อมูล (${action}) ได้`, null);
         }
 
         return {
@@ -2148,6 +2154,7 @@ const Calendar = {
                 }
             } else {
                 if (warningEl) warningEl.style.setProperty('display', 'none', 'important');
+                ConnectionManager.setSuccess(null, 'เชื่อมต่อเซิร์ฟเวอร์สำเร็จแล้ว');
             }
 
             this.events = [];
