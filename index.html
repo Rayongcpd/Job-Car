@@ -28,6 +28,26 @@
   <!-- ============ TOAST CONTAINER ============ -->
   <div id="toastContainer" class="toast-container"></div>
 
+  <!-- ============ CONNECTION STATUS BANNER (AUTO-RECONNECT) ============ -->
+  <div id="connectionBanner" class="connection-banner" style="display: none;">
+    <div class="connection-banner-container">
+      <div class="connection-banner-info">
+        <div class="connection-icon-wrap" id="connectionIconWrap">
+          <span class="spinner-border spinner-border-sm connection-spinner" id="connectionSpinner" role="status"></span>
+          <i data-lucide="wifi-off" id="connectionIcon" class="connection-icon" style="display: none; width: 15px; height: 15px;"></i>
+        </div>
+        <span id="connectionMessage" class="connection-message">กำลังเชื่อมต่อเซิร์ฟเวอร์ใหม่...</span>
+      </div>
+      <div class="connection-banner-actions">
+        <span id="connectionCountdown" class="connection-countdown" style="display: none;"></span>
+        <button id="connectionRetryBtn" class="connection-btn" onclick="ConnectionManager.manualRetry()">
+          <i data-lucide="rotate-cw" style="width: 13px; height: 13px;"></i>
+          <span>ลองใหม่อีกครั้ง</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ LOGIN SECTION ============ -->
   <!-- ============ APP SECTION (Visible by Default) ============ -->
   <section id="appSection">
@@ -131,6 +151,9 @@
               </button>
             </div>
             <div class="calendar-action-group">
+              <button class="btn btn-outline-custom btn-sm" id="calendarRefreshBtn" onclick="Calendar.load()" title="รีเฟรชข้อมูลปฏิทิน">
+                <i data-lucide="rotate-cw" style="width:14px;height:14px;"></i>
+              </button>
               <button class="btn btn-primary-custom btn-sm admin-only" id="calendarAddAnnBtn" style="display: none;"
                 onclick="Announcements.showAdd()">
                 <i data-lucide="plus" style="width:14px;height:14px;"></i> เพิ่มงานใหม่
@@ -143,6 +166,17 @@
                 <i data-lucide="crosshair" style="width:14px;height:14px;"></i> วันนี้
               </button>
             </div>
+          </div>
+
+          <!-- Partial Sync Warning Bar -->
+          <div id="calendarSyncWarning" class="alert alert-warning py-2 px-3 mb-3 align-items-center justify-content-between" style="display: none !important; border-radius: var(--radius-md); font-size: var(--text-sm);">
+            <div class="d-flex align-items-center gap-2">
+              <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: var(--accent-tertiary); flex-shrink: 0;"></i>
+              <span id="calendarSyncWarningText">ข้อมูลบางส่วนโหลดไม่สำเร็จ</span>
+            </div>
+            <button class="btn btn-sm btn-outline-custom" onclick="Calendar.load()">
+              <i data-lucide="rotate-cw" style="width: 12px; height: 12px;"></i> โหลดใหม่
+            </button>
           </div>
 
           <div class="calendar-legend">

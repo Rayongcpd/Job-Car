@@ -53,6 +53,9 @@ const AppState = {
 
     /** Initialize App */
     async init() {
+        // Initialize Connection & Reconnect Manager
+        ConnectionManager.init();
+
         // Initialize Theme Module immediately to prevent flash of light theme
         ThemeModule.init();
 
@@ -155,55 +158,427 @@ const AppState = {
 document.addEventListener('DOMContentLoaded', () => AppState.init());
 
 // ============================================================
-// 📡 API SERVICE
+// ⚙️ API RETRY CONFIGURATION & HELPERS
 // ============================================================
-const API = {
+const API_RETRY_CONFIG = {
+    defaultMaxRetries: 4,       // Auto-retry up to 4 times for GET
+    postMaxRetries: 2,          // Auto-retry up to 2 times for POST
+    initialDelayMs: 1500,       // Initial retry delay: 1.5s
+    backoffFactor: 1.5,         // Exponential backoff factor
+    maxDelayMs: 6000,           // Maximum delay cap: 6s
+    requestTimeoutMs: 25000     // 25s timeout per request
+};
+
+/** Wait promise */
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+/** Check if text is HTML (GAS redirect / 404 error page) */
+function isHtmlResponse(text) {
+    if (!text || typeof text !== 'string') return false;
+    const trimmed = text.trim().toLowerCase();
+    return trimmed.startsWith('<!doctype') || trimmed.startsWith('<html') || trimmed.startsWith('<head') || trimmed.startsWith('<body');
+}
+
+// ============================================================
+// 🔄 CONNECTION & RECONNECT MANAGER
+// ============================================================
+const ConnectionManager = {
+    state: 'online', // 'online' | 'reconnecting' | 'failed' | 'offline'
+    hasActiveError: false,
+    activeRetries: 0,
+    countdownTimer: null,
+    countdownSeconds: 0,
+    currentRetryCallback: null,
+
+    init() {
+        window.addEventListener('online', () => this.handleOnline());
+        window.addEventListener('offline', () => this.handleOffline());
+    },
+
+    handleOffline() {
+        this.state = 'offline';
+        this.hasActiveError = true;
+        this.clearCountdown();
+        this.showBanner({
+            type: 'error',
+            icon: 'wifi-off',
+            message: 'อุปกรณ์ของคุณออฟไลน์ กรุณาตรวจสอบสัญญาณอินเทอร์เน็ต',
+            showRetry: true,
+            retryText: 'ลองเชื่อมต่อใหม่'
+        });
+    },
+
+    handleOnline() {
+        this.showBanner({
+            type: 'info',
+            message: 'ตรวจพบสัญญาณอินเทอร์เน็ตแล้ว กำลังเชื่อมต่อระบบ...',
+            showSpinner: true
+        });
+        setTimeout(() => {
+            this.manualRetry();
+        }, 800);
+    },
+
     /**
-     * GET request to GAS Web App
-     * @param {Object} params - Query parameters
-     * @returns {Promise<Object>}
+     * Notify that a request is currently being retried
      */
-    async get(params) {
-        const query = new URLSearchParams(params).toString();
-        const url = `${API_URL}?${query}`;
-        try {
-            const res = await fetch(url);
-            return await res.json();
-        } catch (err) {
-            console.error('API GET Error:', err);
-            return { success: false, error: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้' };
+    setReconnecting(attempt, maxRetries, action = '', delayMs = 0) {
+        this.state = 'reconnecting';
+        this.hasActiveError = true;
+        this.activeRetries++;
+
+        const thaiActionNames = {
+            getAnnouncements: 'การปฏิบัติงาน',
+            getVehicleLogs: 'การขอใช้รถ',
+            getSettings: 'การตั้งค่า',
+            login: 'เข้าสู่ระบบ',
+            getLogs: 'บันทึกระบบ',
+            getUsers: 'ข้อมูลผู้ใช้'
+        };
+        const actionDisplay = thaiActionNames[action] ? ` (${thaiActionNames[action]})` : '';
+
+        this.showBanner({
+            type: 'warning',
+            showSpinner: true,
+            message: `กำลังพยายามเชื่อมต่อเซิร์ฟเวอร์ใหม่${actionDisplay}... (ครั้งที่ ${attempt}/${maxRetries})`,
+            showRetry: false
+        });
+    },
+
+    finishRetryAttempt() {
+        if (this.activeRetries > 0) {
+            this.activeRetries--;
         }
     },
 
     /**
-     * POST request to GAS Web App
-     * @param {Object} body - JSON body
-     * @returns {Promise<Object>}
+     * Notify that connection / request succeeded
      */
-    async post(body) {
-        // Attach credentials for admin operations
-        if (AppState.user) {
-            body.username = AppState.user.username;
-            body.password = AppState.user.password;
+    setSuccess(message = 'เชื่อมต่อเซิร์ฟเวอร์สำเร็จแล้ว') {
+        this.finishRetryAttempt();
+        if (this.activeRetries > 0) return; // Other requests still retrying
+
+        this.state = 'online';
+        this.hasActiveError = false;
+        this.clearCountdown();
+
+        this.showBanner({
+            type: 'success',
+            icon: 'check-circle',
+            message: message,
+            showRetry: false
+        });
+
+        setTimeout(() => {
+            if (this.state === 'online') {
+                this.hideBanner();
+            }
+        }, 2200);
+    },
+
+    /**
+     * All retries for a request failed
+     */
+    setFailed(message = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', retryCallback = null) {
+        this.finishRetryAttempt();
+        this.state = 'failed';
+        this.hasActiveError = true;
+        if (retryCallback) {
+            this.currentRetryCallback = retryCallback;
         }
+
+        this.showBanner({
+            type: 'error',
+            icon: 'wifi-off',
+            message: message,
+            showRetry: true,
+            retryText: 'ลองใหม่อีกครั้ง'
+        });
+
+        this.startAutoRetryCountdown(15);
+    },
+
+    startAutoRetryCountdown(seconds = 15) {
+        this.clearCountdown();
+        this.countdownSeconds = seconds;
+        this.updateCountdownDisplay();
+
+        this.countdownTimer = setInterval(() => {
+            this.countdownSeconds--;
+            if (this.countdownSeconds <= 0) {
+                this.clearCountdown();
+                this.manualRetry();
+            } else {
+                this.updateCountdownDisplay();
+            }
+        }, 1000);
+    },
+
+    updateCountdownDisplay() {
+        const countdownEl = document.getElementById('connectionCountdown');
+        if (countdownEl) {
+            countdownEl.textContent = `(ลองใหม่อัตโนมัติใน ${this.countdownSeconds}s)`;
+            countdownEl.style.display = 'inline';
+        }
+    },
+
+    clearCountdown() {
+        if (this.countdownTimer) {
+            clearInterval(this.countdownTimer);
+            this.countdownTimer = null;
+        }
+        const countdownEl = document.getElementById('connectionCountdown');
+        if (countdownEl) {
+            countdownEl.style.display = 'none';
+            countdownEl.textContent = '';
+        }
+    },
+
+    /**
+     * User clicks "ลองใหม่อีกครั้ง" or auto-countdown triggers
+     */
+    async manualRetry() {
+        this.clearCountdown();
+        this.showBanner({
+            type: 'info',
+            showSpinner: true,
+            message: 'กำลังเชื่อมต่อใหม่...',
+            showRetry: false
+        });
+
         try {
-            // NOTE: GAS Web App ไม่ support preflight CORS (OPTIONS request)
-            // ห้ามตั้ง headers ใดๆ เพื่อให้เป็น "simple request" ที่ไม่ trigger preflight
-            const res = await fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify(body)
-            });
-            return await res.json();
+            if (typeof this.currentRetryCallback === 'function') {
+                await this.currentRetryCallback();
+            } else {
+                await refreshCurrentView();
+            }
+            this.setSuccess('เชื่อมต่อและอัปเดตข้อมูลสำเร็จแล้ว');
         } catch (err) {
-            console.error('API POST Error:', err);
-            return { success: false, error: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้' };
+            console.error('Manual retry failed:', err);
+            this.setFailed('การเชื่อมต่อยังไม่สำเร็จ', this.currentRetryCallback);
         }
+    },
+
+    showBanner({ type = 'info', icon = null, message = '', showSpinner = false, showRetry = false, retryText = 'ลองใหม่' }) {
+        const banner = document.getElementById('connectionBanner');
+        if (!banner) return;
+
+        banner.className = `connection-banner banner-${type}`;
+        banner.style.display = 'block';
+
+        const msgEl = document.getElementById('connectionMessage');
+        if (msgEl) msgEl.textContent = message;
+
+        const spinner = document.getElementById('connectionSpinner');
+        if (spinner) spinner.style.display = showSpinner ? 'inline-block' : 'none';
+
+        const iconEl = document.getElementById('connectionIcon');
+        if (iconEl) {
+            if (icon && !showSpinner) {
+                iconEl.setAttribute('data-lucide', icon);
+                iconEl.style.display = 'inline-block';
+            } else {
+                iconEl.style.display = 'none';
+            }
+        }
+
+        const retryBtn = document.getElementById('connectionRetryBtn');
+        if (retryBtn) {
+            retryBtn.style.display = showRetry ? 'inline-flex' : 'none';
+            const btnSpan = retryBtn.querySelector('span');
+            if (btnSpan) btnSpan.textContent = retryText;
+        }
+
+        if (window.lucide) lucide.createIcons();
+    },
+
+    hideBanner() {
+        const banner = document.getElementById('connectionBanner');
+        if (!banner) return;
+        banner.style.opacity = '0';
+        banner.style.transform = 'translate(-50%, -10px)';
+        setTimeout(() => {
+            banner.style.display = 'none';
+            banner.style.opacity = '';
+            banner.style.transform = '';
+        }, 300);
     }
 };
 
 // ============================================================
-// 🔐 AUTH MODULE
+// 📡 API SERVICE (WITH AUTO-RETRY & RECONNECT)
 // ============================================================
+const API = {
+    /**
+     * GET request to GAS Web App with Automatic Reconnect / Retry
+     * @param {Object} params - Query parameters
+     * @param {Object} [options] - Custom options ({ maxRetries, silent })
+     * @returns {Promise<Object>}
+     */
+    async get(params, options = {}) {
+        const query = new URLSearchParams(params).toString();
+        const maxRetries = options.maxRetries ?? API_RETRY_CONFIG.defaultMaxRetries;
+        const action = params.action || 'get';
+        let lastError = null;
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            const isRetry = attempt > 1;
+            // Cache buster on retry to prevent stale 404 / 302 redirects from Google CDN
+            const cacheBuster = isRetry ? `&_retry=${attempt}&_t=${Date.now()}` : '';
+            const url = `${API_URL}?${query}${cacheBuster}`;
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), API_RETRY_CONFIG.requestTimeoutMs);
+
+            try {
+                if (isRetry && !options.silent) {
+                    ConnectionManager.setReconnecting(attempt, maxRetries, action);
+                }
+
+                const res = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                // Google Apps Script redirect glitch might return HTTP 404, 500, 502, 503
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}: ${res.statusText || 'Error'}`);
+                }
+
+                const text = await res.text();
+                if (isHtmlResponse(text)) {
+                    throw new Error('Google Apps Script returned HTML error instead of JSON');
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (parseErr) {
+                    throw new Error(`Invalid JSON received: ${parseErr.message}`);
+                }
+
+                // If previous attempt had retried, show success in banner
+                if (isRetry && !options.silent) {
+                    ConnectionManager.setSuccess('เชื่อมต่อเซิร์ฟเวอร์สำเร็จแล้ว');
+                } else if (!isRetry && ConnectionManager.activeRetries === 0 && ConnectionManager.state === 'reconnecting') {
+                    ConnectionManager.setSuccess('เชื่อมต่อเซิร์ฟเวอร์สำเร็จแล้ว');
+                }
+
+                return data;
+            } catch (err) {
+                clearTimeout(timeoutId);
+                lastError = err;
+                console.warn(`[API.get] Attempt ${attempt}/${maxRetries} failed for action "${action}":`, err.message);
+
+                if (attempt < maxRetries) {
+                    const waitTime = Math.min(
+                        API_RETRY_CONFIG.maxDelayMs,
+                        API_RETRY_CONFIG.initialDelayMs * Math.pow(API_RETRY_CONFIG.backoffFactor, attempt - 1)
+                    ) + Math.floor(Math.random() * 300);
+
+                    if (!options.silent) {
+                        ConnectionManager.setReconnecting(attempt + 1, maxRetries, action, waitTime);
+                    }
+                    await delay(waitTime);
+                }
+            }
+        }
+
+        // Exhausted all retries
+        console.error(`[API.get] All ${maxRetries} attempts failed for action "${action}":`, lastError);
+        if (!options.silent) {
+            ConnectionManager.setFailed(`ไม่สามารถโหลดข้อมูล (${action}) ได้ กรุณาตรวจสอบการเชื่อมต่อ`, () => refreshCurrentView());
+        }
+
+        return {
+            success: false,
+            error: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+            details: lastError?.message
+        };
+    },
+
+    /**
+     * POST request to GAS Web App with Safe Error Handling & Auto-Retry
+     * @param {Object} body - JSON body
+     * @param {Object} [options] - Custom options
+     * @returns {Promise<Object>}
+     */
+    async post(body, options = {}) {
+        if (AppState.user) {
+            body.username = AppState.user.username;
+            body.password = AppState.user.password;
+        }
+
+        const maxRetries = options.maxRetries ?? API_RETRY_CONFIG.postMaxRetries;
+        const action = body.action || 'post';
+        let lastError = null;
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            const isRetry = attempt > 1;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), API_RETRY_CONFIG.requestTimeoutMs);
+
+            try {
+                if (isRetry && !options.silent) {
+                    ConnectionManager.setReconnecting(attempt, maxRetries, action);
+                }
+
+                // NOTE: GAS Web App ไม่ support preflight CORS (OPTIONS request)
+                // ห้ามตั้ง headers ใดๆ เพื่อให้เป็น "simple request" ที่ไม่ trigger preflight
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(body),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}: ${res.statusText || 'Error'}`);
+                }
+
+                const text = await res.text();
+                if (isHtmlResponse(text)) {
+                    throw new Error('Google Apps Script returned HTML error instead of JSON');
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (parseErr) {
+                    throw new Error(`Invalid JSON received: ${parseErr.message}`);
+                }
+
+                if (isRetry && !options.silent) {
+                    ConnectionManager.setSuccess('ทำรายการสำเร็จแล้ว');
+                }
+
+                return data;
+            } catch (err) {
+                clearTimeout(timeoutId);
+                lastError = err;
+                console.warn(`[API.post] Attempt ${attempt}/${maxRetries} failed for action "${action}":`, err.message);
+
+                if (attempt < maxRetries) {
+                    const waitTime = 2000 + Math.floor(Math.random() * 400);
+                    if (!options.silent) {
+                        ConnectionManager.setReconnecting(attempt + 1, maxRetries, action, waitTime);
+                    }
+                    await delay(waitTime);
+                }
+            }
+        }
+
+        console.error(`[API.post] All ${maxRetries} attempts failed for action "${action}":`, lastError);
+        if (!options.silent) {
+            ConnectionManager.setFailed(`ไม่สามารถส่งข้อมูล (${action}) ได้`, null);
+        }
+
+        return {
+            success: false,
+            error: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง',
+            details: lastError?.message
+        };
+    }
+};
+
 // ============================================================
 // 🔐 AUTH MODULE
 // ============================================================
@@ -916,7 +1291,7 @@ const Announcements = {
             AppState.announcements = result.data;
             this.applyFilter();
         } else {
-            listContainer.innerHTML = emptyHTML('ไม่สามารถโหลดข้อมูลได้');
+            listContainer.innerHTML = errorHTML('ไม่สามารถโหลดข้อมูลการปฏิบัติงานได้', 'Announcements.load()');
         }
     },
 
@@ -1259,7 +1634,7 @@ const VehicleLogs = {
             AppState.vehicleLogs = result.data;
             this.applyFilter();
         } else {
-            listContainer.innerHTML = emptyHTML('ไม่สามารถโหลดข้อมูลได้');
+            listContainer.innerHTML = errorHTML('ไม่สามารถโหลดข้อมูลการขอใช้รถได้', 'VehicleLogs.load()');
         }
     },
 
@@ -1734,12 +2109,46 @@ const Calendar = {
         const grid = document.getElementById('calendarGrid');
         grid.innerHTML = '<div style="grid-column: span 7;"><div class="loading-spinner"><div class="spinner-border"></div></div></div>';
 
+        const warningEl = document.getElementById('calendarSyncWarning');
+        const warningText = document.getElementById('calendarSyncWarningText');
+        if (warningEl) warningEl.style.setProperty('display', 'none', 'important');
+
         // Fetch both data sources in parallel and store promise
         this._lastLoadPromise = (async () => {
             const [annResult, vehResult] = await Promise.all([
                 API.get({ action: 'getAnnouncements' }),
                 API.get({ action: 'getVehicleLogs' })
             ]);
+
+            // If BOTH data sources fail completely even after retries
+            if (!annResult.success && !vehResult.success) {
+                grid.innerHTML = `
+                    <div style="grid-column: span 7; padding: 48px 16px; text-align: center;">
+                        <div class="empty-state error-state">
+                            <i data-lucide="wifi-off" style="width:48px;height:48px;color:var(--accent-danger);"></i>
+                            <h5 style="margin-top:14px;font-family:var(--font-heading);font-weight:600;">ไม่สามารถโหลดข้อมูลปฏิทินได้</h5>
+                            <p style="color:var(--text-secondary);font-size:var(--text-sm);margin-bottom:16px;">เซิร์ฟเวอร์อาจไม่ตอบสนองชั่วคราว หรือสัญญาณอินเทอร์เน็ตมีปัญหา</p>
+                            <button class="btn btn-primary-custom btn-sm" onclick="Calendar.load()">
+                                <i data-lucide="rotate-cw" style="width:14px;height:14px;"></i> ลองโหลดใหม่อีกครั้ง
+                            </button>
+                        </div>
+                    </div>
+                `;
+                if (window.lucide) lucide.createIcons();
+                return false;
+            }
+
+            // If partial failure occurred, notify user via subtle alert bar
+            if (!annResult.success || !vehResult.success) {
+                const failedPart = !annResult.success ? 'การปฏิบัติงาน' : 'การขอใช้รถ';
+                if (warningEl && warningText) {
+                    warningText.textContent = `ไม่สามารถเชื่อมต่อข้อมูล${failedPart}ได้ ข้อมูลในปฏิทินอาจแสดงไม่ครบถ้วน`;
+                    warningEl.style.setProperty('display', 'flex', 'important');
+                    if (window.lucide) lucide.createIcons();
+                }
+            } else {
+                if (warningEl) warningEl.style.setProperty('display', 'none', 'important');
+            }
 
             this.events = [];
 
@@ -2352,11 +2761,72 @@ function showToast(message, type = 'info') {
     toast.className = `toast-custom ${type}`;
     toast.innerHTML = `<i data-lucide="${iconMap[type] || iconMap.info}" style="width:18px;height:18px;flex-shrink:0;"></i><span>${message}</span>`;
     container.appendChild(toast);
+    setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 10);
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(40px)';
         setTimeout(() => toast.remove(), 300);
     }, 3500);
+}
+
+/** Refresh currently active view */
+async function refreshCurrentView() {
+    const activePage = document.querySelector('.page-section.active-page');
+    const pageId = activePage ? activePage.id.replace('page-', '') : 'calendar';
+
+    // Also re-fetch settings if not loaded
+    if (!Settings.data || !Settings.data.calendarMinWidth) {
+        Settings.load().catch(() => {});
+    }
+
+    switch (pageId) {
+        case 'calendar':
+            return await Calendar.load();
+        case 'announcements':
+            return await Announcements.load();
+        case 'vehicles':
+            return await VehicleLogs.load();
+        case 'dashboard':
+            return await Dashboard.load();
+        case 'logs':
+            return await SystemLogs.load();
+        case 'users':
+            return await UserManager.load();
+        default:
+            return await Calendar.load();
+    }
+}
+
+/** Error state HTML with retry button */
+function errorHTML(message, retryAction = 'refreshCurrentView()') {
+    setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 10);
+    return `
+        <div class="empty-state error-state">
+            <i data-lucide="alert-circle" style="width:44px;height:44px;color:var(--accent-danger);"></i>
+            <p style="margin:10px 0 12px;font-weight:500;color:var(--text-primary);">${escapeHtml(message)}</p>
+            <button class="btn btn-outline-custom btn-sm" onclick="${retryAction}">
+                <i data-lucide="rotate-cw" style="width:14px;height:14px;"></i> ลองใหม่อีกครั้ง
+            </button>
+        </div>
+    `;
+}
+
+/** Error table row HTML with retry button */
+function errorTableHTML(colSpan, message, retryAction = 'refreshCurrentView()') {
+    setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 10);
+    return `
+        <tr>
+            <td colspan="${colSpan}">
+                <div class="empty-state error-state" style="padding: 24px 16px;">
+                    <i data-lucide="alert-circle" style="width:36px;height:36px;color:var(--accent-danger);"></i>
+                    <p style="margin:8px 0 10px;font-weight:500;font-size:var(--text-sm);">${escapeHtml(message)}</p>
+                    <button class="btn btn-outline-custom btn-sm" onclick="${retryAction}">
+                        <i data-lucide="rotate-cw" style="width:13px;height:13px;"></i> ลองใหม่อีกครั้ง
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
 }
 
 /** Animate counter from 0 to target */
@@ -2365,7 +2835,6 @@ function animateCounter(elementId, target) {
     if (!el) return;
     el.textContent = (target || 0).toLocaleString();
 }
-
 
 /** Loading HTML */
 function loadingHTML() {
@@ -2936,7 +3405,7 @@ const SystemLogs = {
             this.logs = result.data || [];
             this.render(1);
         } else {
-            container.innerHTML = emptyHTML(result.error || 'ไม่สามารถโหลดข้อมูลบันทึกระบบได้');
+            container.innerHTML = errorTableHTML(5, result.error || 'ไม่สามารถโหลดข้อมูลบันทึกระบบได้', 'SystemLogs.load()');
             this.updatePagination(0);
         }
     },
@@ -3064,7 +3533,7 @@ const UserManager = {
             this.filteredUsers = [...this.users];
             this.filter();
         } else {
-            if (tbody) tbody.innerHTML = `<tr><td colspan="5">${emptyHTML(result.error || 'ไม่สามารถโหลดข้อมูลผู้ใช้งานได้')}</td></tr>`;
+            if (tbody) tbody.innerHTML = errorTableHTML(5, result.error || 'ไม่สามารถโหลดข้อมูลผู้ใช้งานได้', 'UserManager.load()');
             if (summaryEl) summaryEl.textContent = 'เกิดข้อผิดพลาด';
             showToast(result.error || 'โหลดข้อมูลผู้ใช้ไม่สำเร็จ', 'error');
         }
